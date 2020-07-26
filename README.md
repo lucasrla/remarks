@@ -1,6 +1,10 @@
 # remarks
 
-`remarks`: Extract your marks (highlights, scribbles, annotations) and convert them to `Markdown`, `PDF`, `PNG`, and `SVG`. remarks works with PDFs annotated on reMarkable™ paper tablets.
+Extract your marks (highlights, scribbles, annotations) and convert them to `Markdown`, `PDF`, `PNG`, and `SVG`. 
+
+remarks works with PDFs annotated on [reMarkable™ paper tablets](https://remarkable.com).
+
+# Overview
 
 Highlight and annotate PDFs with your Marker on your reMarkable device: 
 
@@ -8,22 +12,32 @@ Highlight and annotate PDFs with your Marker on your reMarkable device:
 
 <img width="300" alt="IMG_0642-low.jpg" src="https://user-images.githubusercontent.com/1920195/88480247-3d776680-cf2b-11ea-9c30-061ec0e5cc60.jpg">
 
-Use `remarks` to export annotated pages to `Markdown`, `PDF`, `PNG`, and `SVG` on your computer:
+Use `remarks` to export annotated pages to `Markdown`, `PDF`, `PNG`, and `SVG` on your computer.
+
+---
+
+`PNG`:
 
 <img width="300" alt="demo-remarks-png.png" src="https://user-images.githubusercontent.com/1920195/88480249-410aed80-cf2b-11ea-919b-22fb550ed9d7.png">
 
-> <mark>WHAT IS LIFE?</mark>
->
-> Based on lectures delivered under the auspices of the <mark>Dublin Institute for</mark> <mark>Advanced Studies at Trinity College,</mark> Dublin, in February 1943
->
-> <mark>To</mark>
-> <mark>the memory of My</mark> <mark>Parents</mark>
+---
+
+`Markdown`:
+
+<mark>WHAT IS LIFE?</mark>
+
+Based on lectures delivered under the auspices of the <mark>Dublin Institute for</mark> <mark>Advanced Studies at Trinity College,</mark> Dublin, in February 1943
+
+<mark>To</mark>
+<mark>the memory of My</mark> <mark>Parents</mark>
+
+---
+
+# Install and usage
 
 Because `remarks` depends only on [PyMuPDF](https://github.com/pymupdf/PyMuPDF) and on [Shapely](https://github.com/Toblerity/Shapely), it should be good to go on macOS, Linux, and Windows. There is no need to install `imagemagick`, `opencv`, or any other image library.
 
-## Install and usage
-
-### 1. Copy files from `xochitl` directory to your computer
+## 1. Copy files from the `xochitl` directory to your computer
 
 There is no need of USB cables nor any connection to your reMarkable Cloud account. You can use the good, old `scp`.
 
@@ -33,7 +47,7 @@ Using these credentials, `scp` the contents of `/home/root/.local/share/remarkab
 
 You probably want to switch off the Auto sleep feature in `Menu > Settings > Power` before transfering the files to prevent an unintented interruption.
 
-### 2. Run `remarks`
+## 2. Run `remarks`
 
 ```sh
 git clone https://github.com/lucasrla/remarks.git
@@ -58,11 +72,11 @@ For usage info, run `python -m remarks --help`.
 Note that this is highly experimental software. So far, it has tested only with version 2.2.0.48 of reMarkable software and on macOS Catalina.
 
 
-## Credits and Acknowledgements
+# Credits and Acknowledgements
 
 - [@JorjMcKie](https://github.com/JorjMcKie) who wrote and maintains the great [PyMuPDF](https://github.com/pymupdf/PyMuPDF)
 
-- [u/stuculu](https://www.reddit.com/r/RemarkableTablet/comments/7c5fh0/work_in_progress_format_of_the_lines_files/) who wrote the first online post (that I could find) about reverse engineering `.rm` files
+- [u/stuculu](https://www.reddit.com/user/stucule/) who posted to [r/RemarkableTablet](https://www.reddit.com/r/RemarkableTablet/comments/7c5fh0/work_in_progress_format_of_the_lines_files/) the first account (that I could find online) about reverse engineering `.rm` files
 
 - [@ax3l](https://github.com/ax3l) who wrote [lines-are-rusty](https://github.com/ax3l/lines-are-rusty) / [lines-are-beautiful](https://github.com/ax3l/lines-are-beautiful) and also [contributed to reverse engineering of `.rm` files](https://plasma.ninja/blog/devices/remarkable/binary/format/2017/12/26/reMarkable-lines-file-format.html)
 
@@ -78,7 +92,7 @@ Note that this is highly experimental software. So far, it has tested only with 
 
 For more reMarkable resources, check out the great [awesome-reMarkable](https://github.com/reHackable/awesome-reMarkable) and [remarkablewiki.com](https://remarkablewiki.com/).
 
-## Disclaimers
+# Disclaimers
 
 This is free open source software from hobby project of an enthusiastic reMarkable user. 
 
