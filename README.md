@@ -33,7 +33,7 @@ Based on lectures delivered under the auspices of the <mark>Dublin Institute for
 
 ---
 
-# Install and usage
+# Setup and usage
 
 Because `remarks` depends only on [PyMuPDF](https://github.com/pymupdf/PyMuPDF) and on [Shapely](https://github.com/Toblerity/Shapely), it should be good to go on macOS, Linux, and Windows. There is no need to install `imagemagick`, `opencv`, or any other image library.
 
@@ -47,7 +47,7 @@ Using these credentials, `scp` the contents of `/home/root/.local/share/remarkab
 
 You probably want to switch off the Auto sleep feature in `Menu > Settings > Power` before transfering the files to prevent an unintented interruption.
 
-## 2. Run `remarks`
+## 2. Clone, install and run `remarks`
 
 ```sh
 git clone https://github.com/lucasrla/remarks.git
