@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "remarks"
+version = "0.1.0"
+description = "Extract your marks (highlights, scribbles, annotations) and convert them to markdown, pdf, png, and svg. Works with PDFs annotated on reMarkable™ paper tablets."
+authors = ["Lucas Amaro <lucasrla@users.noreply.github.com>"]
+readme = "README.md"
+repository = "https://github.com/lucasrla/remarks"
+keywords = ["remarkable-tablet", "remarkable", "markdown", "png", "pdf", "svg", "annotations", "highlights", "scribbles"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Topic :: Multimedia :: Graphics :: Graphics Conversion",
+    "Topic :: Utilities"
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+Shapely = "^1.7.0"
+PyMuPDF = "^1.17.4"
+
+[tool.poetry.dev-dependencies]
+black = "^19.10b0"
+pylint = "^2.5.3"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"

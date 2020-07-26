@@ -1,0 +1,8 @@
+__pycache__/
+
+.python-version
+.vscode
+
+_/
+TODOs.md
+RESEARCH.md
