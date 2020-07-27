@@ -35,17 +35,19 @@ Based on lectures delivered under the auspices of the <mark>Dublin Institute for
 
 # Setup and usage
 
-Because `remarks` depends only on [PyMuPDF](https://github.com/pymupdf/PyMuPDF) and on [Shapely](https://github.com/Toblerity/Shapely), it should be good to go on macOS, Linux, and Windows. There is no need to install `imagemagick`, `opencv`, or any other image library.
+Because `remarks` depends only on [PyMuPDF](https://github.com/pymupdf/PyMuPDF) and [Shapely](https://github.com/Toblerity/Shapely), there is no need to install `imagemagick`, `opencv`, or any additional image library. 
+
+Please note that remarks is still highly experimental software. So far, it has been tested only with reMarkable software version 2.2.0.48 on macOS Catalina. But because there are just two dependencies, I expect it to be easy to install and use on Linux and Windows too.
 
 ## 1. Copy files from the `xochitl` directory to your computer
 
-There is no need of USB cables nor any connection to your reMarkable Cloud account. You can use the good, old `scp`.
+To copy your files, use the good old `scp`. There is no need of USB cables nor any connection to your reMarkable Cloud account.
 
 On your reMarkable device, go to `Menu > Settings > About`, then under the `Copyrights and Licenses` tab, scroll down the `General Information` text. Right after the paragraph titled "GPLv3 Compliance", there will be the username (`root`), password and IP address needed for `SSH`.
 
 Using these credentials, `scp` the contents of `/home/root/.local/share/remarkable/xochitl` from your reMarkable to a directory on your computer. It may take a while depending on the size of your document collection and the quality of your wifi network.
 
-You probably want to switch off the Auto sleep feature in `Menu > Settings > Power` before transfering the files to prevent an unintented interruption.
+You probably want to switch off the Auto sleep feature in `Menu > Settings > Power` before transferring the files to prevent any unintented interruptions.
 
 ## 2. Clone, install and run `remarks`
 
@@ -68,8 +70,6 @@ python -m remarks demo/xochitl demo/output
 ```
 
 For usage info, run `python -m remarks --help`.
-
-Note that this is highly experimental software. So far, it has tested only with version 2.2.0.48 of reMarkable software and on macOS Catalina.
 
 
 # Credits and Acknowledgements
