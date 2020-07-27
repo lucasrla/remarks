@@ -92,6 +92,10 @@ Note that this is highly experimental software. So far, it has tested only with 
 
 For more reMarkable resources, check out the great [awesome-reMarkable](https://github.com/reHackable/awesome-reMarkable) and [remarkablewiki.com](https://remarkablewiki.com/).
 
+# License
+
+remarks is distributed under the [GNU General Public License v3.0](https://choosealicense.com/licenses/gpl-3.0/).
+
 # Disclaimers
 
 This is free open source software from hobby project of an enthusiastic reMarkable user. 
