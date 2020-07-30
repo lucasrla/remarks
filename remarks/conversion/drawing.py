@@ -89,11 +89,15 @@ def draw_pdf(data, page, color=True):
     for seg_name, seg_data in segments.items():
         for seg in seg_data["points"]:
             line = geom.LineString(seg)
-            # print(seg)
-            # print(line.bounds, line.length, line.area)
+            if line.length == 0.0:
+                continue
 
             seg_rect = fitz.Rect(*line.bounds)
             seg_type = seg_name.split("_")[0]
+
+            # print(seg)
+            # print(line.bounds, line.length, line.area)
+            # print(seg_rect)
 
             if seg_type == "Highlighter":
                 annot = page.addHighlightAnnot(seg_rect)
