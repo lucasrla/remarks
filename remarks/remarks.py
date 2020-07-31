@@ -9,13 +9,16 @@ from .conversion.text import extract_highlighted_text, create_paragraph_md
 from .utils import get_pdf_name, get_pdf_page_dims, list_pages_uuids, list_ann_rm_files
 
 
-def run_remarks(input_dir, output_dir, targets=["pdf", "md", "png", "svg"]):
+def run_remarks(input_dir, output_dir, targets=None, include_only=None):
     for path in pathlib.Path(f"{input_dir}/").glob("*.pdf"):
         w, h = get_pdf_page_dims(path)
 
         pages = list_pages_uuids(path)
         name = get_pdf_name(path)
         rm_files = list_ann_rm_files(path)
+
+        if include_only and (include_only not in name):
+            continue
 
         if not pages or not name or not rm_files or not len(rm_files):
             continue
@@ -69,19 +72,26 @@ def run_remarks(input_dir, output_dir, targets=["pdf", "md", "png", "svg"]):
                 pixmap.writePNG(f"{_}/{page_idx}.png")
 
             if "md" in targets:
-                highlighted_groups = extract_highlighted_text(ann_page)
-                md_str = create_paragraph_md(ann_page, highlighted_groups)
+                try:
+                    highlighted_groups = extract_highlighted_text(ann_page)
+                    md_str = create_paragraph_md(ann_page, highlighted_groups)
 
-                # TODO: add proper table extraction?
-                # https://pymupdf.readthedocs.io/en/latest/faq.html#how-to-extract-tables-from-documents
+                    # TODO: add proper table extraction?
+                    # https://pymupdf.readthedocs.io/en/latest/faq.html#how-to-extract-tables-from-documents
 
-                # TODO: maybe also add highlighted image (pixmap) extraction?
+                    # TODO: maybe also add highlighted image (pixmap) extraction?
 
-                _ = pathlib.Path(f"{_dir}/md/")
-                _.mkdir(parents=True, exist_ok=True)
-                out_file = f"{_}/{page_idx}.md"
-                with open(out_file, "w") as f:
-                    f.write(md_str)
+                    _ = pathlib.Path(f"{_dir}/md/")
+                    _.mkdir(parents=True, exist_ok=True)
+                    out_file = f"{_}/{page_idx}.md"
+                    with open(out_file, "w") as f:
+                        f.write(md_str)
+
+                except Exception as e:
+                    print(f"ERROR: {e}")
+                    print(
+                        f"Aborted creation of .md file with highlighted text from page #{page_idx}"
+                    )
 
             if "pdf" in targets:
                 _ = pathlib.Path(f"{_dir}/pdf/")

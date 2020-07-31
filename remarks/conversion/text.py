@@ -32,6 +32,22 @@ def extract_highlighted_text(page):
         same_y1_group = groupby(highlighted_words, key=lambda w: w[3])
 
         for y1, gwords in same_y1_group:
+            for w in gwords:
+                # a very naive handling of an edge case
+                for c in w[4]:
+                    if b"\xef\xbf\xbd" == c.encode("utf-8"):  # �
+                        # a few references that might be of interest:
+                        # - https://github.com/pymupdf/PyMuPDF/issues/567 No text extractable from scanned pages
+                        # - https://github.com/pymupdf/PyMuPDF/issues/112 Is there any way to determine if a pdf is scanned has obfuscated fonts
+                        # - https://github.com/pymupdf/PyMuPDF/issues/365 Extracted text shows unicode character 65533
+                        # - https://github.com/pymupdf/PyMuPDF/issues/530 Editing CMap / ToUnicode to achieve correct character mapping when extracting text
+                        # - https://github.com/pymupdf/PyMuPDF/issues/398 Looking for font supporting Nepali
+                        # - https://github.com/pymupdf/PyMuPDF/issues/413 Unicode Normalization with word extraction?
+                        # you can also search for newer issues at https://github.com/pymupdf/PyMuPDF/search
+                        raise ValueError(
+                            f"Found an unmapped character: �. Something might be off with a PDF font. Fonts used in this page are: {page.getFontList(full=True)}"
+                        )
+
             highlighted_groups.append(" ".join(w[4] for w in gwords))
 
     # print(highlighted_groups)
