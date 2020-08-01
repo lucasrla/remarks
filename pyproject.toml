@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Extract your marks (highlights, scribbles, annotations) and convert them to markdown, pdf, png, and svg. Works with PDFs annotated on reMarkable™ paper tablets."
 authors = ["Lucas Amaro <lucasrla@users.noreply.github.com>"]
 readme = "README.md"
+license = "GPL-3.0-only"
 repository = "https://github.com/lucasrla/remarks"
 keywords = ["remarkable-tablet", "remarkable", "markdown", "png", "pdf", "svg", "annotations", "highlights", "scribbles"]
 classifiers = [
