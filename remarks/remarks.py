@@ -4,9 +4,16 @@ import fitz  # PyMuPDF
 
 from .conversion.parsing import parse_rm_file, RM_WIDTH, RM_HEIGHT
 from .conversion.drawing import draw_svg, draw_pdf
-from .conversion.text import extract_highlighted_text, create_paragraph_md
+from .conversion.text import md_from_blocks, is_text_extractable
+from .conversion.ocrmypdf import is_tool, run_ocr
 
 from .utils import get_pdf_name, get_pdf_page_dims, list_pages_uuids, list_ann_rm_files
+
+
+def prepare_subdir(base_dir, fmt):
+    fmt_dir = pathlib.Path(f"{base_dir}/{fmt}/")
+    fmt_dir.mkdir(parents=True, exist_ok=True)
+    return fmt_dir
 
 
 def run_remarks(input_dir, output_dir, targets=None, include_only=None):
@@ -40,10 +47,8 @@ def run_remarks(input_dir, output_dir, targets=None, include_only=None):
                 svg_str = draw_svg(parsed_data)
                 # print(svg_str)
 
-                _ = pathlib.Path(f"{_dir}/svg/")
-                _.mkdir(parents=True, exist_ok=True)
-                out_file = f"{_}/{page_idx}.svg"
-                with open(out_file, "w") as f:
+                subdir = prepare_subdir(_dir, "svg")
+                with open(f"{subdir}/{page_idx}.svg", "w") as f:
                     f.write(svg_str)
 
             # Inspired by https://github.com/pymupdf/PyMuPDF-Utilities/blob/master/examples/posterize.py
@@ -60,43 +65,63 @@ def run_remarks(input_dir, output_dir, targets=None, include_only=None):
 
             ann_page.showPDFpage(adj_rect, pdf_src, pno=page_idx)
 
+            extractable = is_text_extractable(pdf_src[page_idx])
+            ocred = False
+
+            if not extractable and is_tool("ocrmypdf"):
+                print(
+                    f"Couldn't extract text from page #{page_idx}. Will OCR it. Hold on\n"
+                )
+
+                tmp_file = "_tmp.pdf"
+                ann_doc.save(tmp_file)
+                ann_doc.close()
+
+                # Note: as of July 2020, ocrmypdf does not recognize handwriting
+                tmp_file = run_ocr(tmp_file)
+
+                ann_doc = fitz.open(tmp_file)
+                pathlib.Path(tmp_file).unlink()
+
+                ann_page = ann_doc[0]
+                ocred = True
+
             ann_page = draw_pdf(parsed_data, ann_page)
+
+            if "pdf" in targets:
+                subdir = prepare_subdir(_dir, "pdf")
+                ann_doc.save(f"{subdir}/{page_idx}.pdf")
 
             if "png" in targets:
                 # (2, 2) is a short-hand for 2x zoom on x and y
                 # ref: https://pymupdf.readthedocs.io/en/latest/page.html#Page.getPixmap
                 pixmap = ann_page.getPixmap(matrix=fitz.Matrix(2, 2))
 
-                _ = pathlib.Path(f"{_dir}/png/")
-                _.mkdir(parents=True, exist_ok=True)
-                pixmap.writePNG(f"{_}/{page_idx}.png")
+                subdir = prepare_subdir(_dir, "png")
+                pixmap.writePNG(f"{subdir}/{page_idx}.png")
 
             if "md" in targets:
-                try:
-                    highlighted_groups = extract_highlighted_text(ann_page)
-                    md_str = create_paragraph_md(ann_page, highlighted_groups)
+                highlighted = (
+                    len(ann_page.annots(types=(fitz.PDF_ANNOT_HIGHLIGHT,))) > 0
+                )
 
+                if (extractable or ocred) and highlighted:
+                    md_str = md_from_blocks(ann_page)
                     # TODO: add proper table extraction?
                     # https://pymupdf.readthedocs.io/en/latest/faq.html#how-to-extract-tables-from-documents
 
                     # TODO: maybe also add highlighted image (pixmap) extraction?
 
-                    _ = pathlib.Path(f"{_dir}/md/")
-                    _.mkdir(parents=True, exist_ok=True)
-                    out_file = f"{_}/{page_idx}.md"
-                    with open(out_file, "w") as f:
+                    subdir = prepare_subdir(_dir, "md")
+                    with open(f"{subdir}/{page_idx}.md", "w") as f:
                         f.write(md_str)
 
-                except Exception as e:
-                    print(f"ERROR: {e}")
+                elif not highlighted:
+                    print(f"Couldn't find any highlighted text on page #{page_idx}")
+                else:
                     print(
-                        f"Aborted creation of .md file with highlighted text from page #{page_idx}"
+                        f"Found highlighted text but couldn't create markdown from page #{page_idx}"
                     )
-
-            if "pdf" in targets:
-                _ = pathlib.Path(f"{_dir}/pdf/")
-                _.mkdir(parents=True, exist_ok=True)
-                ann_doc.save(f"{_}/{page_idx}.pdf")
 
             # Inserting annotated page into source PDF
             # but beware, we are losing original page size (see the TODO below)

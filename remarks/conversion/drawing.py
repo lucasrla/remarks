@@ -56,7 +56,7 @@ def draw_svg(data, dims={"x": RM_WIDTH, "y": RM_HEIGHT}, color=True):
     return output
 
 
-def prepare_segments(data, color=True):
+def prepare_segments(data):
     segs = {}
 
     for layer in data["layers"]:
@@ -70,13 +70,22 @@ def prepare_segments(data, color=True):
 
                 segs[name]["opacity"] = float(sg_content["style"]["opacity"])
                 segs[name]["color-code"] = st_content["tool"]["color-code"]
+
                 segs[name]["points"] = []
+                segs[name]["lines"] = []
+                segs[name]["rects"] = []
 
                 for segment in sg_content["points"]:
                     points = []
                     for p in segment:
                         points.append((float(p[0]), float(p[1])))
+
                     segs[name]["points"].append(points)
+                    line = geom.LineString(points)
+                    segs[name]["lines"].append(line)
+
+                    if line.length > 0.0:
+                        segs[name]["rects"].append(fitz.Rect(*line.bounds))
 
     return segs
 
@@ -87,32 +96,26 @@ def draw_pdf(data, page, color=True):
     segments = prepare_segments(data)
 
     for seg_name, seg_data in segments.items():
-        for seg in seg_data["points"]:
-            line = geom.LineString(seg)
-            if line.length == 0.0:
-                continue
+        seg_type = seg_name.split("_")[0]
 
-            seg_rect = fitz.Rect(*line.bounds)
-            seg_type = seg_name.split("_")[0]
-
-            # print(seg)
-            # print(line.bounds, line.length, line.area)
-            # print(seg_rect)
-
-            if seg_type == "Highlighter":
+        if seg_type == "Highlighter":
+            for seg_rect in seg_data["rects"]:
                 annot = page.addHighlightAnnot(seg_rect)
 
                 # TODO: setOpacity and setBorder don't seem to have any effect on HighlightAnnot
                 # maybe an issue related to https://github.com/pymupdf/PyMuPDF/issues/421
+                #
+                # see also: https://pymupdf.readthedocs.io/en/latest/faq.html#how-to-add-and-modify-annotations
                 annot.setOpacity(seg_data["opacity"])
                 annot.setBorder(width=seg_data["stroke-width"])
                 annot.update()
 
-            else:  # some kind of Scribble
+        else:  # some kind of Scribble
+            for seg_points in seg_data["points"]:
                 color_array = fitz.utils.getColor(c[seg_data["color-code"]])
 
                 # Inspired by https://github.com/pymupdf/PyMuPDF/blob/master/docs/faq.rst#how-to-use-ink-annotations
-                annot = page.addInkAnnot([seg])
+                annot = page.addInkAnnot([seg_points])
                 annot.setBorder(width=seg_data["stroke-width"])
                 annot.setOpacity(seg_data["opacity"])
                 annot.setColors(stroke=color_array)
