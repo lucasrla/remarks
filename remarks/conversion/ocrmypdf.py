@@ -1,5 +1,4 @@
 import subprocess
-import pathlib
 
 import fitz
 

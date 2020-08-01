@@ -41,7 +41,9 @@ Please note that remarks is still highly experimental software. So far, it has b
 
 ## 1. Copy files from the `xochitl` directory to your computer
 
-To copy your files, use the good old `scp`. There is no need of USB cables nor any connection to your reMarkable Cloud account.
+Check out my [reMarkable command-line utils](https://github.com/lucasrla/rm-utils) for a SSH & rsync setup that is very convenient.
+
+Alternatively, you can use the good old `scp`.
 
 On your reMarkable device, go to `Menu > Settings > About`, then under the `Copyrights and Licenses` tab, scroll down the `General Information` text. Right after the paragraph titled "GPLv3 Compliance", there will be the username (`root`), password and IP address needed for `SSH`.
 
@@ -67,10 +69,10 @@ poetry install
 
 # run the demo
 python -m remarks demo/xochitl demo/output
+
+# read what additional flags are available
+python -m remarks --help
 ```
-
-For usage info, run `python -m remarks --help`.
-
 
 # Credits and Acknowledgements
 
