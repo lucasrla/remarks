@@ -21,16 +21,21 @@ def main():
         metavar="OUTPUT_DIRECTORY",
     )
     parser.add_argument(
-        "--include-only",
-        help="Include only PDFs files whose original names (visibleName) contain string pattern",
-        metavar="STRING_PATTERN",
+        "--pdf_name",
+        help="Work only on PDF files whose original names (visibleName) contain this string",
+        metavar="FILENAME_STRING",
+    )
+    parser.add_argument(
+        "--ann_type",
+        help="Parse only a specific type of annotation: highlights or scribbles (i.e. everything not highlighted)",
+        metavar="ANNOTATION_TYPE",
     )
     parser.add_argument(
         "--targets",
         nargs="+",
-        help="Target file formats. Choose at least one of: pdf png md svg. Defaults to: png md",
+        help="Target file formats. Choose at least one of the following extensions: pdf png md svg. Defaults to: png md",
         default=["md", "png"],
-        metavar="FILE_FORMAT",
+        metavar="FILE_EXTENSION",
     )
     parser.add_argument(
         "-v",

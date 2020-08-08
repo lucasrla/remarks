@@ -16,7 +16,7 @@ def prepare_subdir(base_dir, fmt):
     return fmt_dir
 
 
-def run_remarks(input_dir, output_dir, targets=None, include_only=None):
+def run_remarks(input_dir, output_dir, targets=None, pdf_name=None, ann_type=None):
     for path in pathlib.Path(f"{input_dir}/").glob("*.pdf"):
         w, h = get_pdf_page_dims(path)
 
@@ -24,7 +24,7 @@ def run_remarks(input_dir, output_dir, targets=None, include_only=None):
         name = get_pdf_name(path)
         rm_files = list_ann_rm_files(path)
 
-        if include_only and (include_only not in name):
+        if pdf_name and (pdf_name not in name):
             continue
 
         if not pages or not name or not rm_files or not len(rm_files):
@@ -35,17 +35,27 @@ def run_remarks(input_dir, output_dir, targets=None, include_only=None):
 
         pdf_src = fitz.open(path)
 
+        print(f"Working on PDF file: {path}")
+        print(f'PDF visibleName: "{name}"')
+
         for rm_file in rm_files:
             page_idx = pages.index(f"{rm_file.stem}")
+            # print(f"- page #{page_idx}")
 
-            # parsed_data = parse_rm_file(rm_file, dims={"x": w, "y": h})
-            parsed_data = parse_rm_file(rm_file)
-            # print(parsed_data)
+            highlights, scribbles = parse_rm_file(rm_file)
+
+            if ann_type == "highlights":
+                parsed_data = highlights
+            elif ann_type == "scribbles":
+                parsed_data = scribbles
+            else:  # get both types
+                parsed_data = {**highlights, **scribbles}
+
+            if not parsed_data:
+                continue
 
             if "svg" in targets:
-                # svg_str = draw_svg(parsed_data, dims={"x": w, "y": h})
                 svg_str = draw_svg(parsed_data)
-                # print(svg_str)
 
                 subdir = prepare_subdir(_dir, "svg")
                 with open(f"{subdir}/{page_idx}.svg", "w") as f:
@@ -65,10 +75,11 @@ def run_remarks(input_dir, output_dir, targets=None, include_only=None):
 
             ann_page.showPDFpage(adj_rect, pdf_src, pno=page_idx)
 
+            should_extract_text = ann_type != "scribbles" and highlights
             extractable = is_text_extractable(pdf_src[page_idx])
             ocred = False
 
-            if not extractable and is_tool("ocrmypdf"):
+            if should_extract_text and not extractable and is_tool("ocrmypdf"):
                 print(
                     f"Couldn't extract text from page #{page_idx}. Will OCR it. Hold on\n"
                 )
@@ -101,11 +112,7 @@ def run_remarks(input_dir, output_dir, targets=None, include_only=None):
                 pixmap.writePNG(f"{subdir}/{page_idx}.png")
 
             if "md" in targets:
-                highlighted = (
-                    len(ann_page.annots(types=(fitz.PDF_ANNOT_HIGHLIGHT,))) > 0
-                )
-
-                if (extractable or ocred) and highlighted:
+                if should_extract_text and (extractable or ocred):
                     md_str = md_from_blocks(ann_page)
                     # TODO: add proper table extraction?
                     # https://pymupdf.readthedocs.io/en/latest/faq.html#how-to-extract-tables-from-documents
@@ -116,8 +123,12 @@ def run_remarks(input_dir, output_dir, targets=None, include_only=None):
                     with open(f"{subdir}/{page_idx}.md", "w") as f:
                         f.write(md_str)
 
-                elif not highlighted:
+                elif not highlights:
                     print(f"Couldn't find any highlighted text on page #{page_idx}")
+                elif ann_type == "scribbles":
+                    print(
+                        "Found some highlighted text but `--ann_type` flag was set to `scribbles` only"
+                    )
                 else:
                     print(
                         f"Found highlighted text but couldn't create markdown from page #{page_idx}"

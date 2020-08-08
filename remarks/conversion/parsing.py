@@ -103,6 +103,26 @@ def update_segment_dict(sg, seg_name, opacity, stroke_width):
     return sg
 
 
+def split_ann_types(output):
+    highlights = {}
+    highlights["layers"] = []
+
+    scribbles = {}
+    scribbles["layers"] = []
+
+    for layer in output["layers"]:
+        for st_name, st_value in layer["strokes"].items():
+            if "Highlighter" in st_name:
+                highlights["layers"].append(layer)
+            else:
+                scribbles["layers"].append(layer)
+
+    return (
+        highlights if len(highlights["layers"]) else None,
+        scribbles if len(scribbles["layers"]) else None,
+    )
+
+
 def parse_rm_file(file_path, dims={"x": RM_WIDTH, "y": RM_HEIGHT}):
     with open(file_path, "rb") as f:
         data = f.read()
@@ -234,4 +254,11 @@ def parse_rm_file(file_path, dims={"x": RM_WIDTH, "y": RM_HEIGHT}):
 
         output["layers"].append(l)
 
-    return output
+    # quick and dirty workaround to split highlights and scribbles
+    # TODO: refactor!
+    highlights, scribbles = split_ann_types(output)
+
+    # print(highlights)
+    # print(scribbles)
+
+    return highlights, scribbles
