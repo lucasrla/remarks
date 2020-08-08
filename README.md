@@ -2,7 +2,7 @@
 
 Extract your marks (highlights, scribbles, annotations) and convert them to `Markdown`, `PDF`, `PNG`, and `SVG`. 
 
-remarks works with PDFs annotated on [reMarkable™ paper tablets](https://remarkable.com).
+`remarks` works with PDFs annotated on [reMarkable™ paper tablets](https://remarkable.com).
 
 # Overview
 
@@ -37,13 +37,13 @@ Based on lectures delivered under the auspices of the <mark>Dublin Institute for
 
 Because `remarks` depends only on [PyMuPDF](https://github.com/pymupdf/PyMuPDF) and [Shapely](https://github.com/Toblerity/Shapely), there is no need to install `imagemagick`, `opencv`, or any additional image library. 
 
-Please note that remarks is still highly experimental software. So far, it has been tested only with reMarkable software version 2.2.0.48 on macOS Catalina. But because there are just two dependencies, I expect it to be easy to install and use on Linux and Windows too.
+Please note that `remarks` is still highly experimental software. So far, it has been tested only with reMarkable (software version) `2.2.0.48` on `macOS Catalina`. But because there are just two dependencies, I expect it to be easy to install and use on Linux and Windows too.
 
 ## 1. Copy files from the `xochitl` directory to your computer
 
-Check out my [reMarkable command-line utils](https://github.com/lucasrla/rm-utils) for a SSH & rsync setup that is very convenient.
+_Check out my [reMarkable command-line utils](https://github.com/lucasrla/rm-utils) for a SSH & rsync setup that is very convenient._
 
-Alternatively, you can use the good old `scp`.
+Alternatively, you can use the good old `scp` to copy files from the device to your computer:
 
 On your reMarkable device, go to `Menu > Settings > About`, then under the `Copyrights and Licenses` tab, scroll down the `General Information` text. Right after the paragraph titled "GPLv3 Compliance", there will be the username (`root`), password and IP address needed for `SSH`.
 
@@ -59,12 +59,14 @@ git clone https://github.com/lucasrla/remarks.git
 cd remarks
 
 pyenv virtualenv remarks && pyenv local remarks
-# or your choice for managing environments / dependencies
+# or your tool of choice for managing environments
 
 poetry install
-# or pip install -r requirements.txt
+# or your tool of choice for managing dependencies
+# for example:
+# pip install -r requirements.txt
 
-# note that requirements.txt in this repo was created with:
+# if you use pip, please note that requirements.txt in this repo was created with:
 # poetry export --without-hashes -f requirements.txt -o requirements.txt
 
 # run the demo
@@ -72,6 +74,10 @@ python -m remarks demo/xochitl demo/output
 
 # read what additional flags are available
 python -m remarks --help
+
+# some other examples
+python -m remarks ~/backups/remarkable/xochitl/ test/ --ann_type highlights --targets md
+python -m remarks ~/backups/remarkable/xochitl/ test/ --ann_type scribbles --targets png
 ```
 
 # Credits and Acknowledgements
@@ -86,17 +92,17 @@ python -m remarks --help
 
 - [@ericsfraga, @jmiserez](https://github.com/jmiserez/maxio/blob/ee15bcc86e4426acd5fc70e717468862dce29fb8/tmp-rm16-ericsfraga-rm2svg.py), [@peerdavid](https://github.com/peerdavid/rmapi/blob/master/tools/rM2svg), [@phill777](https://github.com/phil777/maxio) and [@lschwetlick](https://github.com/lschwetlick/maxio/blob/master/rm_tools/rM2svg.py) for updating rM2svg to the most recent `.rm` format
 
-- [@lschwetlick](https://github.com/lschwetlick) also wrote [rMsync](https://github.com/lschwetlick/rMsync) and two blog posts about reMarkable-related software [[1](http://lisaschwetlick.de/blog/2018/03/25/reMarkable/), [2](http://lisaschwetlick.de/blog/2019/06/10/reMarkable-Update/)]
+- [@lschwetlick](https://github.com/lschwetlick) wrote [rMsync](https://github.com/lschwetlick/rMsync) and also two blog posts about reMarkable-related software [[1](http://lisaschwetlick.de/blog/2018/03/25/reMarkable/), [2](http://lisaschwetlick.de/blog/2019/06/10/reMarkable-Update/)]
 
 - [@soulisalmed](https://github.com/soulisalmed) who wrote [biff](https://github.com/soulisalmed/biff)
 
 - [@benlongo](https://github.com/benlongo) who wrote [remarkable-highlights](https://github.com/benlongo/remarkable-highlights)
 
-For more reMarkable resources, check out the great [awesome-reMarkable](https://github.com/reHackable/awesome-reMarkable) and [remarkablewiki.com](https://remarkablewiki.com/).
+For more reMarkable resources, check out [awesome-reMarkable](https://github.com/reHackable/awesome-reMarkable) and [remarkablewiki.com](https://remarkablewiki.com/).
 
 # License
 
-remarks is distributed under the [GNU General Public License v3.0](https://choosealicense.com/licenses/gpl-3.0/).
+`remarks` is distributed under the [GNU General Public License v3.0](https://choosealicense.com/licenses/gpl-3.0/).
 
 # Disclaimers
 
