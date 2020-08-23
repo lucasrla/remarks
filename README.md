@@ -35,21 +35,24 @@ Based on lectures delivered under the auspices of the <mark>Dublin Institute for
 
 # Setup and usage
 
-Because `remarks` depends only on [PyMuPDF](https://github.com/pymupdf/PyMuPDF) and [Shapely](https://github.com/Toblerity/Shapely), there is no need to install `imagemagick`, `opencv`, or any additional image library. 
+Please note that `remarks` is still highly experimental software. 
 
-Please note that `remarks` is still highly experimental software. So far, it has been tested only with reMarkable (software version) `2.2.0.48` on `macOS Catalina`. But because there are just two dependencies, I expect it to be easy to install and use on Linux and Windows too.
+Although I expect it to be easy to install and use on Linux and Windows, it has been used only on a `macOS Catalina` computer and a reMarkable tablet at `2.2.0.48` so far.
+
+Because `remarks` depends only on [PyMuPDF](https://github.com/pymupdf/PyMuPDF) and [Shapely](https://github.com/Toblerity/Shapely), there is no need to install `imagemagick`, `opencv`, or any additional image library. If [OCRmyPDF](https://github.com/jbarlow83/OCRmyPDF) is available on your machine, `remarks` may (optionally) use it.
 
 ## 1. Copy files from the `xochitl` directory to your computer
 
-_Check out my [reMarkable command-line utils](https://github.com/lucasrla/rm-utils) for a SSH & rsync setup that is very convenient._
+I find using `rsync` the easiest way to copy files from/to your tablet. Check out my repository [lucasrla/rm-utils](https://github.com/lucasrla/rm-utils) for my SSH & `rsync` setup.
 
 Alternatively, you can use the good old `scp` to copy files from the device to your computer:
 
-On your reMarkable device, go to `Menu > Settings > About`, then under the `Copyrights and Licenses` tab, scroll down the `General Information` text. Right after the paragraph titled "GPLv3 Compliance", there will be the username (`root`), password and IP address needed for `SSH`.
+- On your reMarkable device, go to `Menu > Settings > About`, then under the `Copyrights and Licenses` tab, scroll down the `General Information` text. Right after the paragraph titled "GPLv3 Compliance", there will be the username (`root`), password and IP address needed for `SSH`.
 
-Using these credentials, `scp` the contents of `/home/root/.local/share/remarkable/xochitl` from your reMarkable to a directory on your computer. It may take a while depending on the size of your document collection and the quality of your wifi network.
+- Using these credentials, `scp` the contents of `/home/root/.local/share/remarkable/xochitl` from your reMarkable to a directory on your computer. It may take a while depending on the size of your document collection and the quality of your wifi network.
 
-You probably want to switch off the Auto sleep feature in `Menu > Settings > Power` before transferring the files to prevent any unintented interruptions.
+- To prevent any unintented interruptions, you can (optionally) switch off the Auto sleep feature in `Menu > Settings > Power` before transferring the files.
+
 
 ## 2. Clone, install and run `remarks`
 
@@ -92,7 +95,7 @@ python -m remarks ~/backups/remarkable/xochitl/ test/ --ann_type scribbles --tar
 
 - [@ericsfraga, @jmiserez](https://github.com/jmiserez/maxio/blob/ee15bcc86e4426acd5fc70e717468862dce29fb8/tmp-rm16-ericsfraga-rm2svg.py), [@peerdavid](https://github.com/peerdavid/rmapi/blob/master/tools/rM2svg), [@phill777](https://github.com/phil777/maxio) and [@lschwetlick](https://github.com/lschwetlick/maxio/blob/master/rm_tools/rM2svg.py) for updating rM2svg to the most recent `.rm` format
 
-- [@lschwetlick](https://github.com/lschwetlick) wrote [rMsync](https://github.com/lschwetlick/rMsync) and also two blog posts about reMarkable-related software [[1](http://lisaschwetlick.de/blog/2018/03/25/reMarkable/), [2](http://lisaschwetlick.de/blog/2019/06/10/reMarkable-Update/)]
+- [@lschwetlick](https://github.com/lschwetlick) who wrote [rMsync](https://github.com/lschwetlick/rMsync) and also two blog posts about reMarkable-related software [[1](http://lisaschwetlick.de/blog/2018/03/25/reMarkable/), [2](http://lisaschwetlick.de/blog/2019/06/10/reMarkable-Update/)]
 
 - [@soulisalmed](https://github.com/soulisalmed) who wrote [biff](https://github.com/soulisalmed/biff)
 
@@ -102,12 +105,10 @@ For more reMarkable resources, check out [awesome-reMarkable](https://github.com
 
 # License
 
-`remarks` is distributed under the [GNU General Public License v3.0](https://choosealicense.com/licenses/gpl-3.0/).
+`remarks` is [Free Software](https://www.gnu.org/philosophy/free-sw.html) distributed under the [GNU General Public License v3.0](https://choosealicense.com/licenses/gpl-3.0/).
 
 # Disclaimers
 
-This is free open source software from hobby project of an enthusiastic reMarkable user. 
-
-There is no warranty whatsoever. Use it at your own risk.
+This is a hobby project of an enthusiastic reMarkable user. There is no warranty whatsoever. Use it at your own risk.
 
 > The author(s) and contributor(s) are not associated with reMarkable AS, Norway. reMarkable is a registered trademark of reMarkable AS in some countries. Please see https://remarkable.com for their products.
