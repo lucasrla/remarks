@@ -117,10 +117,7 @@ def split_ann_types(output):
             else:
                 scribbles["layers"].append(layer)
 
-    return (
-        highlights if len(highlights["layers"]) else None,
-        scribbles if len(scribbles["layers"]) else None,
-    )
+    return highlights, scribbles
 
 
 def parse_rm_file(file_path, dims={"x": RM_WIDTH, "y": RM_HEIGHT}):

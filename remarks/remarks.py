@@ -49,9 +49,9 @@ def run_remarks(input_dir, output_dir, targets=None, pdf_name=None, ann_type=Non
             elif ann_type == "scribbles":
                 parsed_data = scribbles
             else:  # get both types
-                parsed_data = {**highlights, **scribbles}
+                parsed_data = {'layers': highlights['layers'] + scribbles['layers']}
 
-            if not parsed_data:
+            if not parsed_data.get('layers'):
                 continue
 
             if "svg" in targets:
