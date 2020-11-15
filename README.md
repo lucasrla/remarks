@@ -6,7 +6,7 @@ Extract your marks (highlights, scribbles, annotations) and convert them to `Mar
 
 # Overview
 
-Highlight and annotate PDFs with your Marker on your reMarkable device: 
+Highlight and annotate PDFs with your Marker on your reMarkable tablet: 
 
 <!-- How to host images on GitHub but outside your repository? Open an issue, upload your images, and voila! Trick learned from http://felixhayashi.github.io/ReadmeGalleryCreatorForGitHub/ -->
 
@@ -35,23 +35,23 @@ Based on lectures delivered under the auspices of the <mark>Dublin Institute for
 
 # Setup and usage
 
-Please note that `remarks` is still highly experimental software. 
+Please note that `remarks` is still highly experimental software. In any case, pull requests are warmly welcome!
 
-Although I expect it to be easy to install and use on Linux and Windows, it has been used only on a `macOS Catalina` computer and a reMarkable tablet at `2.2.0.48` so far.
+Although I expect `remarks` to be easy to install and use on Linux and Windows, so far it has been used only on a macOS Catalina computer and a ([1st generation](https://remarkable.com/store/remarkable)) reMarkable tablet with software versions `2.2.0.48`, `2.3.0.16`, and `2.4.1.30`.
 
-Because `remarks` depends only on [PyMuPDF](https://github.com/pymupdf/PyMuPDF) and [Shapely](https://github.com/Toblerity/Shapely), there is no need to install `imagemagick`, `opencv`, or any additional image library. If [OCRmyPDF](https://github.com/jbarlow83/OCRmyPDF) is available on your machine, `remarks` may (optionally) use it.
+Because `remarks` depends only on [PyMuPDF](https://github.com/pymupdf/PyMuPDF) and [Shapely](https://github.com/Toblerity/Shapely), there is no need to install `imagemagick`, `opencv`, or any additional image library. If [OCRmyPDF](https://github.com/jbarlow83/OCRmyPDF) is available on your computer, `remarks` may (optionally) use it.
 
 ## 1. Copy files from the `xochitl` directory to your computer
 
-I find using `rsync` the easiest way to copy files from/to your tablet. Check out my repository [lucasrla/rm-utils](https://github.com/lucasrla/rm-utils) for my SSH & `rsync` setup.
+I find using `rsync` the easiest way to copy files from/to your reMarkable tablet. Check out the repository [lucasrla/remarkable-utils](https://github.com/lucasrla/remarkable-utils) for the SSH & `rsync` setup I use (which includes automatic backups based on `cron`). 
 
-Alternatively, you can use the good old `scp` to copy files from the device to your computer:
+Alternatively, you can use the good old `scp` to copy files from the tablet to your computer:
 
-- On your reMarkable device, go to `Menu > Settings > About`, then under the `Copyrights and Licenses` tab, scroll down the `General Information` text. Right after the paragraph titled "GPLv3 Compliance", there will be the username (`root`), password and IP address needed for `SSH`.
+- On your reMarkable tablet, go to `Menu > Settings > Help > About`, then tap on `Copyrights and licenses`. In `General information`, right after the section titled "GPLv3 Compliance", there will be the username (`root`), password and IP addresses needed for `SSH`.
 
 - Using these credentials, `scp` the contents of `/home/root/.local/share/remarkable/xochitl` from your reMarkable to a directory on your computer. It may take a while depending on the size of your document collection and the quality of your wifi network.
 
-- To prevent any unintented interruptions, you can (optionally) switch off the Auto sleep feature in `Menu > Settings > Power` before transferring the files.
+- To prevent any unintented interruptions, you can (optionally) switch off the `Auto sleep` feature in `Menu > Settings > Battery` before transferring your files.
 
 
 ## 2. Clone, install and run `remarks`
