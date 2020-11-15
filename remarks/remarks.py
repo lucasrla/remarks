@@ -1,3 +1,4 @@
+import math
 import pathlib
 
 import fitz  # PyMuPDF
@@ -30,6 +31,8 @@ def run_remarks(input_dir, output_dir, targets=None, pdf_name=None, ann_type=Non
         if not pages or not name or not rm_files or not len(rm_files):
             continue
 
+        page_magnitude = math.floor(math.log10(len(pages))) + 1
+
         _dir = pathlib.Path(f"{output_dir}/{name}/")
         _dir.mkdir(parents=True, exist_ok=True)
 
@@ -49,16 +52,16 @@ def run_remarks(input_dir, output_dir, targets=None, pdf_name=None, ann_type=Non
             elif ann_type == "scribbles":
                 parsed_data = scribbles
             else:  # get both types
-                parsed_data = {**highlights, **scribbles}
+                parsed_data = {'layers': highlights['layers'] + scribbles['layers']}
 
-            if not parsed_data:
+            if not parsed_data.get('layers'):
                 continue
 
             if "svg" in targets:
                 svg_str = draw_svg(parsed_data)
 
                 subdir = prepare_subdir(_dir, "svg")
-                with open(f"{subdir}/{page_idx}.svg", "w") as f:
+                with open(f"{subdir}/{page_idx:0{page_magnitude}}.svg", "w") as f:
                     f.write(svg_str)
 
             # Inspired by https://github.com/pymupdf/PyMuPDF-Utilities/blob/master/examples/posterize.py
@@ -101,7 +104,7 @@ def run_remarks(input_dir, output_dir, targets=None, pdf_name=None, ann_type=Non
 
             if "pdf" in targets:
                 subdir = prepare_subdir(_dir, "pdf")
-                ann_doc.save(f"{subdir}/{page_idx}.pdf")
+                ann_doc.save(f"{subdir}/{page_idx:0{page_magnitude}}.pdf")
 
             if "png" in targets:
                 # (2, 2) is a short-hand for 2x zoom on x and y
@@ -109,7 +112,7 @@ def run_remarks(input_dir, output_dir, targets=None, pdf_name=None, ann_type=Non
                 pixmap = ann_page.getPixmap(matrix=fitz.Matrix(2, 2))
 
                 subdir = prepare_subdir(_dir, "png")
-                pixmap.writePNG(f"{subdir}/{page_idx}.png")
+                pixmap.writePNG(f"{subdir}/{page_idx:0{page_magnitude}}.png")
 
             if "md" in targets:
                 if should_extract_text and (extractable or ocred):
@@ -120,7 +123,7 @@ def run_remarks(input_dir, output_dir, targets=None, pdf_name=None, ann_type=Non
                     # TODO: maybe also add highlighted image (pixmap) extraction?
 
                     subdir = prepare_subdir(_dir, "md")
-                    with open(f"{subdir}/{page_idx}.md", "w") as f:
+                    with open(f"{subdir}/{page_idx:0{page_magnitude}}.md", "w") as f:
                         f.write(md_str)
 
                 elif not highlights:
