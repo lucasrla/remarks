@@ -8,7 +8,7 @@ from .conversion.drawing import draw_svg, draw_pdf
 from .conversion.text import md_from_blocks, is_text_extractable
 from .conversion.ocrmypdf import is_tool, run_ocr
 
-from .utils import get_pdf_name, get_pdf_page_dims, list_pages_uuids, list_ann_rm_files
+from .utils import get_pdf_name, get_pdf_path, get_pdf_page_dims, list_pages_uuids, list_ann_rm_files
 
 
 def prepare_subdir(base_dir, fmt):
@@ -33,7 +33,9 @@ def run_remarks(input_dir, output_dir, targets=None, pdf_name=None, ann_type=Non
 
         page_magnitude = math.floor(math.log10(len(pages))) + 1
 
-        _dir = pathlib.Path(f"{output_dir}/{name}/")
+        pdf_path = get_pdf_path(path)
+
+        _dir = pathlib.Path(f"{output_dir}/{pdf_path}/{name}/")
         _dir.mkdir(parents=True, exist_ok=True)
 
         pdf_src = fitz.open(path)
