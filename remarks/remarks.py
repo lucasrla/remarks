@@ -8,7 +8,13 @@ from .conversion.drawing import draw_svg, draw_pdf
 from .conversion.text import md_from_blocks, is_text_extractable
 from .conversion.ocrmypdf import is_tool, run_ocr
 
-from .utils import get_pdf_name, get_pdf_page_dims, list_pages_uuids, list_ann_rm_files
+from .utils import (
+    get_visible_name,
+    get_ui_path,
+    get_pdf_page_dims,
+    list_pages_uuids,
+    list_ann_rm_files,
+)
 
 
 def prepare_subdir(base_dir, fmt):
@@ -22,7 +28,7 @@ def run_remarks(input_dir, output_dir, targets=None, pdf_name=None, ann_type=Non
         w, h = get_pdf_page_dims(path)
 
         pages = list_pages_uuids(path)
-        name = get_pdf_name(path)
+        name = get_visible_name(path)
         rm_files = list_ann_rm_files(path)
 
         if pdf_name and (pdf_name not in name):
@@ -32,14 +38,16 @@ def run_remarks(input_dir, output_dir, targets=None, pdf_name=None, ann_type=Non
             continue
 
         page_magnitude = math.floor(math.log10(len(pages))) + 1
+        in_device_path = get_ui_path(path)
 
-        _dir = pathlib.Path(f"{output_dir}/{name}/")
+        _dir = pathlib.Path(f"{output_dir}/{in_device_path}/{name}/")
         _dir.mkdir(parents=True, exist_ok=True)
 
         pdf_src = fitz.open(path)
 
         print(f"Working on PDF file: {path}")
         print(f'PDF visibleName: "{name}"')
+        print(f"PDF in-device directory: {in_device_path}")
 
         for rm_file in rm_files:
             page_idx = pages.index(f"{rm_file.stem}")
@@ -52,9 +60,9 @@ def run_remarks(input_dir, output_dir, targets=None, pdf_name=None, ann_type=Non
             elif ann_type == "scribbles":
                 parsed_data = scribbles
             else:  # get both types
-                parsed_data = {'layers': highlights['layers'] + scribbles['layers']}
+                parsed_data = {"layers": highlights["layers"] + scribbles["layers"]}
 
-            if not parsed_data.get('layers'):
+            if not parsed_data.get("layers"):
                 continue
 
             if "svg" in targets:
