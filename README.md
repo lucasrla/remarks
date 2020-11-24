@@ -49,7 +49,7 @@ Alternatively, you can use the good old `scp` to copy files from the tablet to y
 
 - On your reMarkable tablet, go to `Menu > Settings > Help > About`, then tap on `Copyrights and licenses`. In `General information`, right after the section titled "GPLv3 Compliance", there will be the username (`root`), password and IP addresses needed for `SSH`.
 
-- Using these credentials, `scp` the contents of `/home/root/.local/share/remarkable/xochitl` from your reMarkable to a directory on your computer. It may take a while depending on the size of your document collection and the quality of your wifi network.
+- Using these credentials, `scp` the contents of `/home/root/.local/share/remarkable/xochitl` from your reMarkable to a directory on your computer. (Copying may take a while depending on the size of your document collection and the quality of your wifi network.)
 
 - To prevent any unintented interruptions, you can (optionally) switch off the `Auto sleep` feature in `Menu > Settings > Battery` before transferring your files.
 
