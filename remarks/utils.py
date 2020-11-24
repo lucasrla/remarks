@@ -3,8 +3,6 @@ import pathlib
 
 import fitz  # PyMuPDF
 
-from os.path import dirname, abspath, join
-
 
 def read_meta_file(path, suffix=".metadata"):
     file = path.with_name(f"{path.stem}{suffix}")
