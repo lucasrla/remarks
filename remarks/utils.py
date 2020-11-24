@@ -2,41 +2,46 @@ import json
 import pathlib
 
 import fitz  # PyMuPDF
+
 from os.path import dirname, abspath, join
 
 
-def get_pdf_name(path):
-    metadata_file = path.with_name(f"{path.stem}.metadata")
-    if not metadata_file.exists():
+def read_meta_file(path, suffix=".metadata"):
+    file = path.with_name(f"{path.stem}{suffix}")
+    if not file.exists():
         return None
-    metadata = json.loads(open(metadata_file).read())
-    # print(metadata)
+    data = json.loads(open(file).read())
+    return data
+
+
+def get_visible_name(path):
+    metadata = read_meta_file(path)
     return metadata["visibleName"]
 
-def get_pdf_path(path):
-    metadata_file = path.with_name(f"{path.stem}.metadata")
-    if not metadata_file.exists():
-        return None
-    metadata = json.loads(open(metadata_file).read())
-    # Check the parent 
-    path_tmp = ""
-    file_path = path
+
+def get_ui_path(path):
+    metadata = read_meta_file(path)
     parent_filename = metadata["parent"]
+
+    # Check the parent
+    ui_path = pathlib.Path("")
+
     while parent_filename != "":
         # First get the total path of the parent
-        parent_path = join(dirname(abspath(file_path)), metadata["parent"])
+        parent_path = pathlib.Path(path.parent, metadata["parent"])
+
         # Get the meta data of this parent
-        metadata_file = parent_path + ".metadata"
-        metadata = json.loads(open(metadata_file).read())
+        metadata = read_meta_file(parent_path)
         parent_title = metadata["visibleName"]
+
         # These go in reverse order up to the top level
-        path_tmp = join(parent_title,path_tmp)
+        ui_path = pathlib.Path(parent_title).joinpath(ui_path)
+
         # Get the parent of this one
         parent_filename = metadata["parent"]
-    # Strip off final slash
-    path_tmp = path_tmp.strip("/")
-    path_tmp = path_tmp.strip("\\")
-    return path_tmp
+
+    return ui_path
+
 
 def get_pdf_page_dims(path, page_number=0):
     with fitz.open(path) as doc:
@@ -46,11 +51,7 @@ def get_pdf_page_dims(path, page_number=0):
 
 
 def list_pages_uuids(path):
-    content_file = path.with_name(f"{path.stem}.content")
-    if not content_file.exists():
-        return None
-    content = json.loads(open(content_file).read())
-    # print(content)
+    content = read_meta_file(path, suffix=".content")
     return content["pages"]
 
 
@@ -58,5 +59,4 @@ def list_ann_rm_files(path):
     content_dir = pathlib.Path(f"{path.parents[0]}/{path.stem}/")
     if not content_dir.is_dir():
         return None
-    # print(content_dir)
     return list(content_dir.glob("*.rm"))
