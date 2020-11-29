@@ -112,10 +112,12 @@ def split_ann_types(output):
 
     for layer in output["layers"]:
         for st_name, st_value in layer["strokes"].items():
+            strokes = {"strokes": {st_name: st_value}}
+
             if "Highlighter" in st_name:
-                highlights["layers"].append(layer)
+                highlights["layers"].append(strokes)
             else:
-                scribbles["layers"].append(layer)
+                scribbles["layers"].append(strokes)
 
     return highlights, scribbles
 
