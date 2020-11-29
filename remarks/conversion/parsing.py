@@ -36,17 +36,12 @@ RM_TOOLS = {
 
 
 def get_adjusted_pdf_dims(pdf_width, pdf_height, scale):
-    # if PDF page is wider than reMarkable aspect ratio,
-    # keep its height
     if (pdf_width / pdf_height) >= (RM_WIDTH / RM_HEIGHT):
-        adj_w = RM_WIDTH * scale
+        adj_w = RM_WIDTH * scale  # "perfect" fitting, no gap
         adj_h = pdf_height
-
-    # if PDF page is narrower than reMarkable aspect ratio,
-    # keep its width
     else:
         adj_w = pdf_width
-        adj_h = RM_HEIGHT * scale
+        adj_h = RM_HEIGHT * scale  # "perfect" fitting, no gap
 
     return adj_w, adj_h
 
@@ -56,20 +51,22 @@ def get_rescaled_device_dims(scale):
 
 
 def get_pdf_to_device_ratio(pdf_width, pdf_height):
-    # compute scale factor based on the dimension that will be not changed
-
     pdf_aspect_ratio = pdf_width / pdf_height
     device_aspect_ratio = RM_WIDTH / RM_HEIGHT
 
-    # if PDF page is wider than reMarkable aspect ratio (AR),
-    # then we will later increase the page height to get to reMarkable's AR
+    # if PDF page is wider than reMarkable's aspect ratio,
+    # use pdf_width as reference for the scale ratio.
+    # there should be no "leftover" (gap) on the horizontal
     if pdf_aspect_ratio >= device_aspect_ratio:
-        return pdf_width / RM_WIDTH
+        scale = pdf_width / RM_WIDTH
 
-    # PDF page is narrower than reMarkable AR,
-    # then we will later increase the page width to get to reMarkable's AR
+    # PDF page is narrower than reMarkable's a/r,
+    # use pdf_height as reference for the scale ratio.
+    # there should be no "leftover" (gap) on the vertical
     else:
-        return pdf_height / RM_HEIGHT
+        scale = pdf_height / RM_HEIGHT
+
+    return scale
 
 
 def process_tool_meta(pen, dims, w, opc, cc):

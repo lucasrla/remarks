@@ -72,7 +72,7 @@ def run_remarks(
                 parsed_data = highlights
             elif ann_type == "scribbles":
                 parsed_data = scribbles
-            else:  # merge both annotated types
+            else:  # merge both annotation types
                 parsed_data = {"layers": highlights["layers"] + scribbles["layers"]}
 
             if not parsed_data.get("layers"):
