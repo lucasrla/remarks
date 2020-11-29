@@ -88,7 +88,7 @@ def extract_highlighted_words(page):
         for y1, gwords in same_y1_group:
             highlighted_groups.append(" ".join(w[4] for w in gwords))
 
-    # print(highlighted_groups)
+    # print("highlighted_groups", highlighted_groups)
 
     return highlighted_groups
 
@@ -100,9 +100,9 @@ def md_from_blocks(page):
         return ""
 
     txt_blocks = get_page_blocks(page)
-    # print(txt_blocks)
+    # print("txt_blocks", txt_blocks)
 
-    # TODO: for malformed PDFs, it may be necessary to use script showed in the link below
+    # TODO: for malformed PDFs it might be necessary to use the script below
     # https://pymupdf.readthedocs.io/en/latest/faq.html#how-to-extract-text-in-natural-reading-order
 
     out_blocks = []
@@ -126,6 +126,6 @@ def md_from_blocks(page):
             block = block.replace("</mark>\n<mark>", " ").replace("</mark> <mark>", " ")
             out_blocks.append(block)
 
-    # print(out_blocks)
+    # print("out_blocks", out_blocks)
 
     return "\n\n".join(out_blocks)

@@ -3,7 +3,13 @@ import pathlib
 
 import fitz  # PyMuPDF
 
-from .conversion.parsing import parse_rm_file, RM_WIDTH, RM_HEIGHT
+from .conversion.parsing import (
+    parse_rm_file,
+    get_pdf_to_device_ratio,
+    get_adjusted_pdf_dims,
+    get_rescaled_device_dims,
+    rescale_parsed_data,
+)
 from .conversion.drawing import draw_svg, draw_pdf
 from .conversion.text import md_from_blocks, is_text_extractable
 from .conversion.ocrmypdf import is_tool, run_ocr
@@ -23,10 +29,15 @@ def prepare_subdir(base_dir, fmt):
     return fmt_dir
 
 
-def run_remarks(input_dir, output_dir, targets=None, pdf_name=None, ann_type=None):
+def run_remarks(
+    input_dir,
+    output_dir,
+    targets=None,
+    pdf_name=None,
+    ann_type=None,
+    combined_pdf=False,
+):
     for path in pathlib.Path(f"{input_dir}/").glob("*.pdf"):
-        w, h = get_pdf_page_dims(path)
-
         pages = list_pages_uuids(path)
         name = get_visible_name(path)
         rm_files = list_ann_rm_files(path)
@@ -51,7 +62,9 @@ def run_remarks(input_dir, output_dir, targets=None, pdf_name=None, ann_type=Non
 
         for rm_file in rm_files:
             page_idx = pages.index(f"{rm_file.stem}")
-            # print(f"- page #{page_idx}")
+
+            pdf_w, pdf_h = get_pdf_page_dims(path, page_idx=page_idx)
+            scale = get_pdf_to_device_ratio(pdf_w, pdf_h)
 
             highlights, scribbles = parse_rm_file(rm_file)
 
@@ -59,11 +72,13 @@ def run_remarks(input_dir, output_dir, targets=None, pdf_name=None, ann_type=Non
                 parsed_data = highlights
             elif ann_type == "scribbles":
                 parsed_data = scribbles
-            else:  # get both types
+            else:  # merge both annotated types
                 parsed_data = {"layers": highlights["layers"] + scribbles["layers"]}
 
             if not parsed_data.get("layers"):
                 continue
+
+            parsed_data = rescale_parsed_data(parsed_data, scale)
 
             if "svg" in targets:
                 svg_str = draw_svg(parsed_data)
@@ -72,19 +87,15 @@ def run_remarks(input_dir, output_dir, targets=None, pdf_name=None, ann_type=Non
                 with open(f"{subdir}/{page_idx:0{page_magnitude}}.svg", "w") as f:
                     f.write(svg_str)
 
-            # Inspired by https://github.com/pymupdf/PyMuPDF-Utilities/blob/master/examples/posterize.py
             ann_doc = fitz.open()
-            ann_page = ann_doc.newPage(width=RM_WIDTH, height=RM_HEIGHT)
 
-            # ann_page = doc.newPage(width=w, height=h)
-            # print(ann_page.rect)
+            rm_w_rescaled, rm_h_scaled = get_rescaled_device_dims(scale)
+            ann_page = ann_doc.newPage(width=rm_w_rescaled, height=rm_h_scaled)
 
-            if (w / h) >= (RM_WIDTH / RM_HEIGHT):
-                adj_rect = fitz.Rect(0, 0, RM_WIDTH, h * (RM_WIDTH / w))
-            else:
-                adj_rect = fitz.Rect(0, 0, w * (RM_HEIGHT / h), RM_HEIGHT)
+            pdf_w_adj, pdf_h_adj = get_adjusted_pdf_dims(pdf_w, pdf_h, scale)
+            pdf_rect = fitz.Rect(0, 0, pdf_w_adj, pdf_h_adj)
 
-            ann_page.showPDFpage(adj_rect, pdf_src, pno=page_idx)
+            ann_page.showPDFpage(pdf_rect, pdf_src, pno=page_idx)
 
             should_extract_text = ann_type != "scribbles" and highlights
             extractable = is_text_extractable(pdf_src[page_idx])
@@ -145,27 +156,14 @@ def run_remarks(input_dir, output_dir, targets=None, pdf_name=None, ann_type=Non
                         f"Found highlighted text but couldn't create markdown from page #{page_idx}"
                     )
 
-            # Inserting annotated page into source PDF
-            # but beware, we are losing original page size (see the TODO below)
-            #
-            # pdf_src.insertPDF(ann_doc, start_at=page_idx)
-            # pdf_src.deletePage(page_idx + 1)
-
-            # TODO: come up with a way to adjust size of ann_page before inserting it into the original PDF
-            # the code below does not work because showPDFpage does not carry annotations over
-            #
-            # rect_src = fitz.Rect(0, 0, w, h)
-            # page_src = pdf_src.newPage()
-            # page_src.showPDFpage(rect_src, ann_doc, pno=(page_idx + 1))
+            if combined_pdf:
+                pdf_src.insertPDF(ann_doc, start_at=page_idx)
+                pdf_src.deletePage(page_idx + 1)
 
             ann_doc.close()
 
-        # TODO: bookmarks and table of contents of original PDF are missing in the -REMARKS.pdf file
-        # how hard is to reconstruct them?
-        # ref: note #2 at https://pymupdf.readthedocs.io/en/latest/document.html#Document.insertPDF
-        # ref: https://github.com/pymupdf/PyMuPDF-Utilities/blob/master/examples/PDFjoiner.py#L462
-        #
-        # pdf_src.save(f"{output_dir}/{name}-REMARKS.pdf")
+        if combined_pdf:
+            pdf_src.save(f"{output_dir}/{name} _remarks.pdf")
 
         pdf_src.close()
 

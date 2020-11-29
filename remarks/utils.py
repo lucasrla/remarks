@@ -30,6 +30,9 @@ def get_ui_path(path):
 
         # Get the meta data of this parent
         metadata = read_meta_file(parent_path)
+        if not metadata:
+            return pathlib.Path(".")
+
         parent_title = metadata["visibleName"]
 
         # These go in reverse order up to the top level
@@ -41,10 +44,9 @@ def get_ui_path(path):
     return ui_path
 
 
-def get_pdf_page_dims(path, page_number=0):
+def get_pdf_page_dims(path, page_idx=0):
     with fitz.open(path) as doc:
-        # doc.pageCount
-        first_page = doc.loadPage(page_number)
+        first_page = doc.loadPage(page_idx)
         return first_page.rect.width, first_page.rect.height
 
 

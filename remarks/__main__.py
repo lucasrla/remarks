@@ -38,6 +38,12 @@ def main():
         metavar="FILE_EXTENSION",
     )
     parser.add_argument(
+        "--combined_pdf",
+        dest="combined_pdf",
+        action="store_true",
+        help="Create a '*_remarks.pdf' file with all annotated pages merged into the original (unannotated) PDF",
+    )
+    parser.add_argument(
         "-v",
         "--version",
         action="version",
@@ -47,6 +53,8 @@ def main():
     parser.add_argument(
         "-h", "--help", action="help", help="Show this help message",
     )
+
+    parser.set_defaults(combined_pdf=False)
 
     args = parser.parse_args()
     args_dict = vars(args)

@@ -25,12 +25,51 @@ RM_TOOLS = {
     18: "Highlighter",
 }
 
+# TODO: support Calligraphy pen (added in 2.3)
+# https://support.remarkable.com/hc/en-us/articles/360013230697-Software-release-2-3
+
+
 # TODO: review stroke-width and opacity for all tools,
 # especially the ones with pressure and tilting capabilities.
 # As of July 2020 (version 2.2.0.48), the parameters below
 # don't seem to match reMarkable's (on device) rendering
-#
-# See comparison-*.png files
+
+
+def get_adjusted_pdf_dims(pdf_width, pdf_height, scale):
+    # if PDF page is wider than reMarkable aspect ratio,
+    # keep its height
+    if (pdf_width / pdf_height) >= (RM_WIDTH / RM_HEIGHT):
+        adj_w = RM_WIDTH * scale
+        adj_h = pdf_height
+
+    # if PDF page is narrower than reMarkable aspect ratio,
+    # keep its width
+    else:
+        adj_w = pdf_width
+        adj_h = RM_HEIGHT * scale
+
+    return adj_w, adj_h
+
+
+def get_rescaled_device_dims(scale):
+    return RM_WIDTH * scale, RM_HEIGHT * scale
+
+
+def get_pdf_to_device_ratio(pdf_width, pdf_height):
+    # compute scale factor based on the dimension that will be not changed
+
+    pdf_aspect_ratio = pdf_width / pdf_height
+    device_aspect_ratio = RM_WIDTH / RM_HEIGHT
+
+    # if PDF page is wider than reMarkable aspect ratio (AR),
+    # then we will later increase the page height to get to reMarkable's AR
+    if pdf_aspect_ratio >= device_aspect_ratio:
+        return pdf_width / RM_WIDTH
+
+    # PDF page is narrower than reMarkable AR,
+    # then we will later increase the page width to get to reMarkable's AR
+    else:
+        return pdf_height / RM_HEIGHT
 
 
 def process_tool_meta(pen, dims, w, opc, cc):
@@ -257,7 +296,27 @@ def parse_rm_file(file_path, dims={"x": RM_WIDTH, "y": RM_HEIGHT}):
     # TODO: refactor!
     highlights, scribbles = split_ann_types(output)
 
-    # print(highlights)
-    # print(scribbles)
-
     return highlights, scribbles
+
+
+# TODO: make the rescale part of the parsing (or perhaps drawing?) process
+def rescale_parsed_data(parsed_data, scale):
+    if scale == 1:
+        return parsed_data
+
+    for strokes in parsed_data["layers"]:
+        for _, st_value in strokes["strokes"].items():
+            for _, sg_value in st_value["segments"].items():
+
+                sg_value["style"][
+                    "stroke-width"
+                ] = f"{float(sg_value['style']['stroke-width']) * scale:.3f}"
+
+                for i, points in enumerate(sg_value["points"]):
+                    for k, point in enumerate(points):
+                        sg_value["points"][i][k] = (
+                            f"{float(point[0]) * scale:.3f}",
+                            f"{float(point[1]) * scale:.3f}",
+                        )
+
+    return parsed_data
