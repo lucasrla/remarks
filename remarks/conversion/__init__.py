@@ -4,6 +4,7 @@ from .parsing import (
     get_adjusted_pdf_dims,
     get_rescaled_device_dims,
     rescale_parsed_data,
+    get_ann_max_bound,
 )
 
 from .drawing import draw_svg, draw_pdf

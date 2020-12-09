@@ -1,5 +1,7 @@
 import struct
 
+import shapely.geometry as geom  # Shapely
+
 # reMarkable defaults
 RM_WIDTH = 1404
 RM_HEIGHT = 1872
@@ -317,3 +319,24 @@ def rescale_parsed_data(parsed_data, scale):
                         )
 
     return parsed_data
+
+
+def get_ann_max_bound(parsed_data):
+    # https://shapely.readthedocs.io/en/stable/manual.html#LineString
+    # https://shapely.readthedocs.io/en/stable/manual.html#MultiLineString
+    # https://shapely.readthedocs.io/en/stable/manual.html#object.bounds
+
+    collection = []
+
+    for strokes in parsed_data["layers"]:
+        for _, st_value in strokes["strokes"].items():
+            for _, sg_value in st_value["segments"].items():
+                for points in sg_value["points"]:
+                    line = geom.LineString(
+                        [(float(p[0]), float(p[1])) for p in points]
+                    )
+                    collection.append(line)
+
+    (minx, miny, maxx, maxy) = geom.MultiLineString(collection).bounds
+
+    return (maxx, maxy)

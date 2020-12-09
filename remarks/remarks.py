@@ -9,6 +9,7 @@ from .conversion.parsing import (
     get_adjusted_pdf_dims,
     get_rescaled_device_dims,
     rescale_parsed_data,
+    get_ann_max_bound,
 )
 from .conversion.drawing import draw_svg, draw_pdf
 from .conversion.text import md_from_blocks, is_text_extractable
@@ -157,8 +158,19 @@ def run_remarks(
                     )
 
             if combined_pdf:
-                pdf_src.insertPDF(ann_doc, start_at=page_idx)
-                pdf_src.deletePage(page_idx + 1)
+                x_max, y_max = get_ann_max_bound(parsed_data)
+                ann_outside = (x_max > pdf_w_adj) or (y_max > pdf_h_adj)
+
+                # If there are annotations outside the original PDF page limits,
+                # insert the ann_page that we have created from scratch
+                if ann_outside:
+                    pdf_src.insertPDF(ann_doc, start_at=page_idx)
+                    pdf_src.deletePage(page_idx + 1)
+
+                # Else, draw annotations in the original PDF page (in-place)
+                # to preserve links (and also the original page size)
+                else:
+                    draw_pdf(parsed_data, pdf_src[page_idx])
 
             ann_doc.close()
 
@@ -166,4 +178,3 @@ def run_remarks(
             pdf_src.save(f"{output_dir}/{name} _remarks.pdf")
 
         pdf_src.close()
-
