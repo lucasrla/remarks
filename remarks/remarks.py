@@ -170,7 +170,7 @@ def run_remarks(
                 # Else, draw annotations in the original PDF page (in-place)
                 # to preserve links (and also the original page size)
                 else:
-                    draw_pdf(parsed_data, pdf_src[page_idx])
+                    draw_pdf(parsed_data, pdf_src[page_idx], inplace=True)
 
             ann_doc.close()
 

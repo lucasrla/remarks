@@ -90,7 +90,7 @@ def prepare_segments(data):
     return segs
 
 
-def draw_pdf(data, page, color=True):
+def draw_pdf(data, page, color=True, inplace=False):
     c = COLOR if color else GRAYSCALE
 
     segments = prepare_segments(data)
@@ -121,4 +121,5 @@ def draw_pdf(data, page, color=True):
                 annot.setColors(stroke=color_array)
                 annot.update()
 
-    return page
+    if not inplace:
+        return page
