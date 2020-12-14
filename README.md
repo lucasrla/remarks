@@ -2,21 +2,21 @@
 
 Extract your marks (highlights, scribbles, annotations) and convert them to `Markdown`, `PDF`, `PNG`, and `SVG`. 
 
-`remarks` works with PDFs annotated on [reMarkable™ paper tablets](https://remarkable.com).
+`remarks` works with PDFs annotated on [reMarkable™ paper tablets](https://remarkable.com), both 1st and 2nd generation.
 
 Please note that `remarks` is still highly experimental software. In any case, pull requests are warmly welcome!
 
 
 # Some use cases
 
-## In: PDF highlighted on reMarkable | Out: PDF with parseable highlights
-Someone who highlights lots of PDFs (e.g., academics) can export their highlights and process them in a reference management tool, like [Zotero](https://www.zotero.org) ([#2](https://github.com/lucasrla/remarks/issues/2#issuecomment-732166093)).
+- **`In`: PDF highlighted on reMarkable | `Out`: PDF with parseable highlights**  
+Someone who highlights lots of PDFs (e.g., researchers, academics, etc) can export their highlights for processing with a reference management tool, like [Zotero](https://www.zotero.org) [[#2](https://github.com/lucasrla/remarks/issues/2#issuecomment-732166093)].
 
-## Extract highlighted text to Markdown
-Infovores of the world can export highlighted text to [.md](https://en.wikipedia.org/wiki/Markdown) files that can be imported into their preferred "tool for networked thought", like [Obsidian](https://obsidian.md/) or [Roam Research](https://roamresearch.com).
+- **Extract highlighted text from PDF to Markdown**  
+Infovores of the world can export highlighted text to [Markdown](https://en.wikipedia.org/wiki/Markdown) and insert them into their preferred "tool for networked thought", like [Obsidian](https://obsidian.md/) or [Roam Research](https://roamresearch.com).
 
-## Export annotated pages to full-page images
-Sometimes having just the textual content is not enough, sometimes you need the actual (visual) context around your annotation. To help you in such situations, `remarks` can export each annotated PDF page to a [.png](https://en.wikipedia.org/wiki/Portable_Network_Graphics) file. After that, these images can be, for example, embedded to your "tool for networked thought".
+- **Export annotated PDF pages to full-page images**  
+Sometimes having just the textual content is not enough, sometimes you need the actual (visual) context around your annotation. To help you in such situations, `remarks` can export each annotated PDF page to a [PNG](https://en.wikipedia.org/wiki/Portable_Network_Graphics) image file. Images can be easily uploaded or embedded anywhere, from personal websites to "tools for networked thought".
 
 
 # A visual example
@@ -52,11 +52,22 @@ And then use `remarks` to export annotated pages to `Markdown`, `PDF`, `PNG`, or
 - Please note that the `SVG` image file includes only the annotations, not the original PDF content.
 
 
+# Compatibility and dependencies
+
+Because `remarks` depends only on [PyMuPDF](https://github.com/pymupdf/PyMuPDF) and [Shapely](https://github.com/Toblerity/Shapely), there is no need to install `imagemagick`, `opencv`, or any additional image library. Both PyMuPDF and Shapely have pre-built wheels [[1](https://pypi.org/project/PyMuPDF/1.18.4/#files), [2](https://pypi.org/project/Shapely/1.7.1/#files)] for several platforms (macOS, Linux, Windows) and recent Python versions, so their installation should be easy and smooth for most setups.
+
+I use `remarks` with a [reMarkable 1](https://remarkable.com/store/remarkable) tablet running software version `2.4.1.30` on macOS Catalina (`10.15.x`) with CPython `3.8.x`. I don't have other machines to test it thoroughly, but I expect `remarks` to work just fine in all the common setups, including with [remarkable 2](https://remarkable.com/store/remarkable-2/). 
+
+Help me keep track of `remarks` compatibility across different setups:
+
+- If it is working well for you, [please make a quick comment in this discussion thread mentioning your setup](https://github.com/lucasrla/remarks/discussions/8)
+-  If you ran into any problems, do [raise an issue](https://github.com/lucasrla/remarks/issues/new/choose)
+
+If [OCRmyPDF](https://github.com/jbarlow83/OCRmyPDF) is available on your computer, `remarks` may (optionally) use it to OCR PDFs before extracting their highlighted text.
+
 # Setup
 
-Although I expect `remarks` to be easy to install and use on Linux and Windows, so far it has been used only on a macOS Catalina computer and a ([1st generation](https://remarkable.com/store/remarkable)) reMarkable tablet with software versions `2.2.0.48`, `2.3.0.16`, and `2.4.1.30`.
-
-Because `remarks` depends only on [PyMuPDF](https://github.com/pymupdf/PyMuPDF), [Shapely](https://github.com/Toblerity/Shapely), and Python 3.8+, there is no need to install `imagemagick`, `opencv`, or any additional image library. If [OCRmyPDF](https://github.com/jbarlow83/OCRmyPDF) is available on your computer, `remarks` may (optionally) use it.
+To get `remarks` up and running on your local machine, follow the instructions below:
 
 ## 1. Copy files from the `xochitl` directory to your computer
 
@@ -72,24 +83,33 @@ Alternatively, you can use the good old `scp` to copy files from the tablet to y
 
 ## 2. Clone this repository and install the dependencies
 
+> **Users on macOS Big Sur**: If you use `pip`, it is best to upgrade it to `>=20.3` via `pip install --upgrade pip`. Version `20.3` includes a new dependency resolver and a fix to an annoying issue with macOS Big Sur [[#988](https://github.com/pypa/pip/issues/988#issuecomment-735451004)]. If you use `poetry`, it seems the annoying issue is still there, follow [[#3458](https://github.com/python-poetry/poetry/issues/3458)] for updates. For more information on these issues and their impact to the installation of `remarks`, see [[#7](https://github.com/lucasrla/remarks/issues/7)].
+
 ```sh
-git clone https://github.com/lucasrla/remarks.git
+### 2.1 Clone
+git clone https://github.com/lucasrla/remarks.git && cd remarks
 
-cd remarks
 
+### 2.2 Create a virtual environment
+
+# I like pyenv [https://github.com/pyenv/pyenv] 
+# and pyenv-virtualenv [https://github.com/pyenv/pyenv-virtualenv]:
 pyenv virtualenv remarks && pyenv local remarks
-# Or your tool of choice for managing environments
 
+# But of course you are free to use any of the many alternatives
+# e.g. virtualenv, virtualenvwrapper
+
+
+### 2.3 Install the dependencies
+
+# Personally, I prefer using poetry [http://python-poetry.org] for managing dependencies:
 poetry install
-# Or your tool of choice for managing dependencies (e.g., pip)
 
-# pip install -r requirements.txt
-# If you use pip, note that the requirements.txt file was created via:
-# poetry export --without-hashes -f requirements.txt -o requirements.txt
+# But pip works fine as well:
+pip install -r requirements.txt
 ```
 
-
-# Usage & Demo
+# Usage and Demo
 
 Run `remarks` and check out what arguments are available:
 
