@@ -14,10 +14,11 @@ classifiers = [
     "Topic :: Utilities"
 ]
 
+# https://python-poetry.org/docs/dependency-specification/
 [tool.poetry.dependencies]
 python = "^3.8"
-Shapely = "^1.7.0"
-PyMuPDF = "^1.17.4"
+Shapely = "^1.7.1"
+PyMuPDF = "^1.18.4"
 
 [tool.poetry.dev-dependencies]
 black = "^19.10b0"
