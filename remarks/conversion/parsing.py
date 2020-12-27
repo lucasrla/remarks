@@ -18,23 +18,15 @@ RM_TOOLS = {
     3: "Marker",
     16: "Marker",
     6: "Eraser",
+    8: "EraseArea",
     7: "SharpPencil",
     13: "SharpPencil",
     1: "TiltPencil",
     14: "TiltPencil",
-    8: "EraseArea",
     5: "Highlighter",
     18: "Highlighter",
+    21: "CalligraphyPen",
 }
-
-# TODO: support Calligraphy pen (added in 2.3)
-# https://support.remarkable.com/hc/en-us/articles/360013230697-Software-release-2-3
-
-
-# TODO: review stroke-width and opacity for all tools,
-# especially the ones with pressure and tilting capabilities.
-# As of July 2020 (version 2.2.0.48), the parameters below
-# don't seem to match reMarkable's (on device) rendering
 
 
 def get_adjusted_pdf_dims(pdf_width, pdf_height, scale):
@@ -56,26 +48,32 @@ def get_pdf_to_device_ratio(pdf_width, pdf_height):
     pdf_aspect_ratio = pdf_width / pdf_height
     device_aspect_ratio = RM_WIDTH / RM_HEIGHT
 
-    # if PDF page is wider than reMarkable's aspect ratio,
+    # If PDF page is wider than reMarkable's aspect ratio,
     # use pdf_width as reference for the scale ratio.
-    # there should be no "leftover" (gap) on the horizontal
+    # There should be no "leftover" (gap) on the horizontal
     if pdf_aspect_ratio >= device_aspect_ratio:
         scale = pdf_width / RM_WIDTH
 
     # PDF page is narrower than reMarkable's a/r,
     # use pdf_height as reference for the scale ratio.
-    # there should be no "leftover" (gap) on the vertical
+    # There should be no "leftover" (gap) on the vertical
     else:
         scale = pdf_height / RM_HEIGHT
 
     return scale
 
 
+# TODO: Review stroke-width and opacity for all tools
+
+# TODO: Add support for pressure and tilting as well
+# for e.g. Paintbrush (Brush), CalligraphyPen, TiltPencil, etc
+
+
 def process_tool_meta(pen, dims, w, opc, cc):
     tool = RM_TOOLS[pen]
     # print(tool)
 
-    if tool == "Brush":
+    if tool == "Brush" or tool == "CalligraphyPen":
         pass
     elif tool == "Ballpoint" or tool == "Fineliner":
         w = 32 * w * w - 116 * w + 107
@@ -99,7 +97,7 @@ def process_tool_meta(pen, dims, w, opc, cc):
     else:
         raise ValueError("Found an unknown tool: {pen}")
 
-    w /= 2.3  # adjust for transformation to A4
+    w /= 2.3  # Adjust to A4
 
     meta = {}
     meta["pen-code"] = pen
@@ -107,7 +105,7 @@ def process_tool_meta(pen, dims, w, opc, cc):
 
     name_code = f"{tool}_{pen}"
 
-    # w for stroke-width, opc for opacity
+    # Shorthands: w for stroke-width, opc for opacity
     return name_code, meta, w, opc
 
 
@@ -132,12 +130,12 @@ def update_stroke_dict(st, tool, tool_meta):
     return st
 
 
-def update_segment_dict(sg, seg_name, opacity, stroke_width):
-    sg[seg_name] = {}
-    sg[seg_name]["style"] = {}
-    sg[seg_name]["style"]["opacity"] = f"{opacity:.3f}"
-    sg[seg_name]["style"]["stroke-width"] = f"{stroke_width:.3f}"
-    sg[seg_name]["points"] = []
+def update_seg_dict(sg, name, opacity, stroke_width):
+    sg[name] = {}
+    sg[name]["style"] = {}
+    sg[name]["style"]["opacity"] = f"{opacity:.3f}"
+    sg[name]["style"]["stroke-width"] = f"{stroke_width:.3f}"
+    sg[name]["points"] = []
     return sg
 
 
@@ -186,7 +184,7 @@ def parse_rm_file(file_path, dims={"x": RM_WIDTH, "y": RM_HEIGHT}):
     output = {}
     output["layers"] = []
 
-    for layer in range(nlayers):
+    for _ in range(nlayers):
         fmt = "<I"
         (nstrokes,) = struct.unpack_from(fmt, data, offset)
         offset += struct.calcsize(fmt)
@@ -194,20 +192,18 @@ def parse_rm_file(file_path, dims={"x": RM_WIDTH, "y": RM_HEIGHT}):
         l = {}
         l["strokes"] = {}
 
-        for stroke in range(nstrokes):
+        for _ in range(nstrokes):
             if is_v3:
                 fmt = "<IIIfI"
                 # cc for color-code, w for stroke-width
-                pen, cc, i_unk, w, nsegs = struct.unpack_from(fmt, data, offset)
+                pen, cc, _, w, nsegs = struct.unpack_from(fmt, data, offset)
                 offset += struct.calcsize(fmt)
             if is_v5:
                 fmt = "<IIIffI"
-                pen, cc, i_unk, w, unk, nsegs = struct.unpack_from(fmt, data, offset)
+                pen, cc, _, w, _, nsegs = struct.unpack_from(fmt, data, offset)
                 offset += struct.calcsize(fmt)
 
             opc = 1  # opacity
-            last_x = -1.0
-            last_y = -1.0
 
             tool, tool_meta, stroke_width, opacity = process_tool_meta(
                 pen, dims, w, opc, cc
@@ -218,80 +214,25 @@ def parse_rm_file(file_path, dims={"x": RM_WIDTH, "y": RM_HEIGHT}):
             if tool not in l["strokes"].keys():
                 l["strokes"] = update_stroke_dict(l["strokes"], tool, tool_meta)
 
-                l["strokes"][tool]["segments"] = update_segment_dict(
+                l["strokes"][tool]["segments"] = update_seg_dict(
                     l["strokes"][tool]["segments"], seg_name, opacity, stroke_width
                 )
 
             p = []
 
-            for segment in range(nsegs):
+            for _ in range(nsegs):
                 fmt = "<ffffff"
-                xpos, ypos, pressure, tilt, i_unk2, _ = struct.unpack_from(
-                    fmt, data, offset
-                )
+                x, y, press, tilt, _, _ = struct.unpack_from(fmt, data, offset)
                 offset += struct.calcsize(fmt)
 
-                xpos, ypos = adjust_xypos_sizes(xpos, ypos, dims)
-                # print(f"segment: {segment} | xpos: {xpos} | ypos: {ypos}")
-
-                if pen == 0:  # "Brush"
-                    if 0 == segment % 8:
-                        l["strokes"][tool]["segments"][seg_name]["points"].append(p)
-
-                        seg_width = (
-                            (5.0 * tilt)
-                            * (6.0 * stroke_width - 10)
-                            * (1 + 2.0 * pressure * pressure * pressure)
-                        )
-                        seg_name = f"tilt+press_{seg_width:.3f}_{opacity:.3f}"
-
-                        if seg_name not in l["strokes"][tool]["segments"].keys():
-                            l["strokes"][tool]["segments"] = update_segment_dict(
-                                l["strokes"][tool]["segments"],
-                                seg_name,
-                                opacity,
-                                seg_opacity,
-                            )
-
-                        p = []
-
-                        if last_x != -1.0:
-                            p.append((f"{last_x:.3f}", f"{last_y:.3f}"))
-
-                        last_x = xpos
-                        last_y = ypos
-
-                elif pen == 1:  # "Tilt Pencil"
-                    if 0 == segment % 8:
-                        l["strokes"][tool]["segments"][seg_name]["points"].append(p)
-
-                        seg_width = (10.0 * tilt - 2) * (8.0 * stroke_width - 14)
-                        seg_opacity = (pressure - 0.2) * (pressure - 0.2)
-                        seg_name = f"tilt+press_{seg_width:.3f}_{seg_opacity:.3f}"
-
-                        if seg_name not in l["strokes"][tool]["segments"].keys():
-                            l["strokes"][tool]["segments"] = update_segment_dict(
-                                l["strokes"][tool]["segments"],
-                                seg_name,
-                                seg_opacity,
-                                seg_opacity,
-                            )
-
-                        p = []
-
-                        if last_x != -1.0:
-                            p.append((f"{last_x:.3f}", f"{last_y:.3f}"))
-
-                        last_x = xpos
-                        last_y = ypos
-
+                xpos, ypos = adjust_xypos_sizes(x, y, dims)
                 p.append((f"{xpos:.3f}", f"{ypos:.3f}"))
 
             l["strokes"][tool]["segments"][seg_name]["points"].append(p)
 
         output["layers"].append(l)
 
-    # quick and dirty workaround to split highlights and scribbles
+    # Quick and dirty workaround to split highlights and scribbles
     # TODO: refactor!
     highlights, scribbles = split_ann_types(output)
 
@@ -332,9 +273,7 @@ def get_ann_max_bound(parsed_data):
         for _, st_value in strokes["strokes"].items():
             for _, sg_value in st_value["segments"].items():
                 for points in sg_value["points"]:
-                    line = geom.LineString(
-                        [(float(p[0]), float(p[1])) for p in points]
-                    )
+                    line = geom.LineString([(float(p[0]), float(p[1])) for p in points])
                     collection.append(line)
 
     (minx, miny, maxx, maxy) = geom.MultiLineString(collection).bounds

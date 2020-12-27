@@ -42,11 +42,11 @@ def draw_svg(data, dims={"x": RM_WIDTH, "y": RM_HEIGHT}, color=True):
 
                     output += '" />\n'
 
-            output += "</g>"  # close stroke
+            output += "</g>"  # Close stroke
 
-        output += "</g>"  # close layer
+        output += "</g>"  # Close layer
 
-    # overlay it with a clickable rect for flipping pages
+    # Overlay it with a clickable rect for flipping pages
     output += (
         f'<rect x="0" y="0" width="{dims["x"]}" height="{dims["y"]}" fill-opacity="0"/>'
     )
@@ -98,19 +98,21 @@ def draw_pdf(data, page, color=True, inplace=False):
     for seg_name, seg_data in segments.items():
         seg_type = seg_name.split("_")[0]
 
+        # Highlights
         if seg_type == "Highlighter":
             for seg_rect in seg_data["rects"]:
                 annot = page.addHighlightAnnot(seg_rect)
 
-                # TODO: setOpacity and setBorder don't seem to have any effect on HighlightAnnot
-                # maybe an issue related to https://github.com/pymupdf/PyMuPDF/issues/421
-                #
+                # TODO: setOpacity and setBorder not working with HighlightAnnot
+                # maybe related to https://github.com/pymupdf/PyMuPDF/issues/421
                 # see also: https://pymupdf.readthedocs.io/en/latest/faq.html#how-to-add-and-modify-annotations
+
                 annot.setOpacity(seg_data["opacity"])
                 annot.setBorder(width=seg_data["stroke-width"])
                 annot.update()
 
-        else:  # some kind of Scribble
+        # Scribbles
+        else:
             for seg_points in seg_data["points"]:
                 color_array = fitz.utils.getColor(c[seg_data["color-code"]])
 
