@@ -9,7 +9,7 @@ Please note that `remarks` is still highly experimental software. In any case, p
 
 # Some use cases
 
-- **`In`: PDF highlighted on reMarkable | `Out`: PDF with parseable highlights**  
+- **In: PDF highlighted on reMarkable → Out: PDF with parseable highlights**  
 Someone who highlights lots of PDFs (e.g., researchers, academics, etc) can export their highlights for processing with a reference management tool, like [Zotero](https://www.zotero.org) [[#2](https://github.com/lucasrla/remarks/issues/2#issuecomment-732166093)].
 
 - **Extract highlighted text from PDF to Markdown**  
@@ -56,12 +56,12 @@ And then use `remarks` to export annotated pages to `Markdown`, `PDF`, `PNG`, or
 
 Because `remarks` depends only on [PyMuPDF](https://github.com/pymupdf/PyMuPDF) and [Shapely](https://github.com/Toblerity/Shapely), there is no need to install `imagemagick`, `opencv`, or any additional image library. Both PyMuPDF and Shapely have pre-built wheels [[1](https://pypi.org/project/PyMuPDF/1.18.4/#files), [2](https://pypi.org/project/Shapely/1.7.1/#files)] for several platforms (macOS, Linux, Windows) and recent Python versions, so their installation should be easy and smooth for most setups.
 
-I use `remarks` with a [reMarkable 1](https://remarkable.com/store/remarkable) tablet running software version `2.4.1.30` on macOS Catalina (`10.15.x`) with CPython `3.8.x`. I don't have other machines to test it thoroughly, but I expect `remarks` to work just fine in all the common setups, including with [remarkable 2](https://remarkable.com/store/remarkable-2/). 
+I use `remarks` with a [reMarkable 1](https://remarkable.com/store/remarkable) tablet running software version `2.5.0.27` on macOS Catalina (`10.15.x`) with CPython `3.8.x`. I don't have other devices to test it thoroughly, but I expect `remarks` to work just fine in all common setups, including with [remarkable 2](https://remarkable.com/store/remarkable-2/).
 
-Help me keep track of `remarks` compatibility across different setups:
+Incidentally, please help me keep track of `remarks` compatibility across different setups:
 
-- If it is working well for you, [please make a quick comment in this discussion thread mentioning your setup](https://github.com/lucasrla/remarks/discussions/8)
--  If you ran into any problems, do [raise an issue](https://github.com/lucasrla/remarks/issues/new/choose)
+- If it is working well for you, [make a quick comment with your setup](https://github.com/lucasrla/remarks/discussions/8)
+- If you run into any problems, [raise an issue](https://github.com/lucasrla/remarks/issues/new/choose)
 
 If [OCRmyPDF](https://github.com/jbarlow83/OCRmyPDF) is available on your computer, `remarks` may (optionally) use it to OCR PDFs before extracting their highlighted text.
 
@@ -69,11 +69,11 @@ If [OCRmyPDF](https://github.com/jbarlow83/OCRmyPDF) is available on your comput
 
 To get `remarks` up and running on your local machine, follow the instructions below:
 
-## 1. Copy files from the `xochitl` directory to your computer
+## 1. Copy files from reMarkable's `xochitl` directory to your computer
 
-I find using `rsync` the easiest way to copy files from/to your reMarkable tablet. Check out the repository [lucasrla/remarkable-utils](https://github.com/lucasrla/remarkable-utils) for the SSH & `rsync` setup I use (which includes automatic backups based on `cron`). 
+I find using `rsync` the easiest way to copy reMarkable's internal files from/to your tablet. Check out the repository [lucasrla/remarkable-utils](https://github.com/lucasrla/remarkable-utils) for the SSH & `rsync` setup I use (which includes automatic backups based on `cron`). 
 
-Alternatively, you can use the good old `scp` to copy files from the tablet to your computer:
+Alternatively, you can use the good old `scp` to copy the reMarkable's internal files from the tablet to your computer:
 
 - On your reMarkable tablet, go to `Menu > Settings > Help > About`, then tap on `Copyrights and licenses`. In `General information`, right after the section titled "GPLv3 Compliance", there will be the username (`root`), password and IP addresses needed for `SSH`.
 
@@ -144,7 +144,7 @@ python -m remarks ~/backups/remarkable/xochitl/ example_2/ --targets png
 
 - [@JorjMcKie](https://github.com/JorjMcKie) who wrote and maintains the great [PyMuPDF](https://github.com/pymupdf/PyMuPDF)
 
-- [u/stuculu](https://www.reddit.com/user/stucule/) who posted to [r/RemarkableTablet](https://www.reddit.com/r/RemarkableTablet/comments/7c5fh0/work_in_progress_format_of_the_lines_files/) the first account (that I could find online) about reverse engineering `.rm` files
+- [u/stucule](https://www.reddit.com/user/stucule/) who [posted to r/RemarkableTablet](https://www.reddit.com/r/RemarkableTablet/comments/7c5fh0/work_in_progress_format_of_the_lines_files/) the first account (that I could find online) about reverse engineering `.rm` files
 
 - [@ax3l](https://github.com/ax3l) who wrote [lines-are-rusty](https://github.com/ax3l/lines-are-rusty) / [lines-are-beautiful](https://github.com/ax3l/lines-are-beautiful) and also [contributed to reverse engineering of `.rm` files](https://plasma.ninja/blog/devices/remarkable/binary/format/2017/12/26/reMarkable-lines-file-format.html)
 
