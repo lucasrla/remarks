@@ -44,6 +44,12 @@ def main():
         help="Create a '*_remarks.pdf' file with all annotated pages merged into the original (unannotated) PDF",
     )
     parser.add_argument(
+        "--modified_pdf",
+        dest="modified_pdf",
+        action="store_true",
+        help="Create a '*_remarks-only.pdf' file with all annotated pages",
+    )    
+    parser.add_argument(
         "-v",
         "--version",
         action="version",
@@ -54,7 +60,7 @@ def main():
         "-h", "--help", action="help", help="Show this help message",
     )
 
-    parser.set_defaults(combined_pdf=False)
+    parser.set_defaults(combined_pdf=False, modified_pdf=False)
 
     args = parser.parse_args()
     args_dict = vars(args)

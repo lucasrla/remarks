@@ -37,6 +37,7 @@ def run_remarks(
     pdf_name=None,
     ann_type=None,
     combined_pdf=False,
+    modified_pdf=False,
 ):
     for path in pathlib.Path(f"{input_dir}/").glob("*.pdf"):
         pages = list_pages_uuids(path)
@@ -52,10 +53,13 @@ def run_remarks(
         page_magnitude = math.floor(math.log10(len(pages))) + 1
         in_device_path = get_ui_path(path)
 
-        _dir = pathlib.Path(f"{output_dir}/{in_device_path}/{name}/")
-        _dir.mkdir(parents=True, exist_ok=True)
+        out_path = pathlib.Path(f"{output_dir}/{in_device_path}/{name}/")
+        out_path.mkdir(parents=True, exist_ok=True)
 
         pdf_src = fitz.open(path)
+
+        if modified_pdf:
+            mod_pdf = fitz.open()
 
         print(f"Working on PDF file: {path}")
         print(f'PDF visibleName: "{name}"')
@@ -84,7 +88,7 @@ def run_remarks(
             if "svg" in targets:
                 svg_str = draw_svg(parsed_data)
 
-                subdir = prepare_subdir(_dir, "svg")
+                subdir = prepare_subdir(out_path, "svg")
                 with open(f"{subdir}/{page_idx:0{page_magnitude}}.svg", "w") as f:
                     f.write(svg_str)
 
@@ -123,7 +127,7 @@ def run_remarks(
             ann_page = draw_pdf(parsed_data, ann_page)
 
             if "pdf" in targets:
-                subdir = prepare_subdir(_dir, "pdf")
+                subdir = prepare_subdir(out_path, "pdf")
                 ann_doc.save(f"{subdir}/{page_idx:0{page_magnitude}}.pdf")
 
             if "png" in targets:
@@ -131,7 +135,7 @@ def run_remarks(
                 # ref: https://pymupdf.readthedocs.io/en/latest/page.html#Page.getPixmap
                 pixmap = ann_page.getPixmap(matrix=fitz.Matrix(2, 2))
 
-                subdir = prepare_subdir(_dir, "png")
+                subdir = prepare_subdir(out_path, "png")
                 pixmap.writePNG(f"{subdir}/{page_idx:0{page_magnitude}}.png")
 
             if "md" in targets:
@@ -142,7 +146,7 @@ def run_remarks(
 
                     # TODO: maybe also add highlighted image (pixmap) extraction?
 
-                    subdir = prepare_subdir(_dir, "md")
+                    subdir = prepare_subdir(out_path, "md")
                     with open(f"{subdir}/{page_idx:0{page_magnitude}}.md", "w") as f:
                         f.write(md_str)
 
@@ -156,6 +160,9 @@ def run_remarks(
                     print(
                         f"Found highlighted text but couldn't create markdown from page #{page_idx}"
                     )
+
+            if modified_pdf:
+                mod_pdf.insertPDF(ann_doc, start_at=-1)
 
             if combined_pdf:
                 x_max, y_max = get_ann_max_bound(parsed_data)
@@ -176,5 +183,8 @@ def run_remarks(
 
         if combined_pdf:
             pdf_src.save(f"{output_dir}/{name} _remarks.pdf")
+
+        if modified_pdf:
+            mod_pdf.save(f"{output_dir}/{name} _remarks-only.pdf")
 
         pdf_src.close()
