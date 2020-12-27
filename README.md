@@ -31,8 +31,9 @@ And then use `remarks` to export annotated pages to `Markdown`, `PDF`, `PNG`, or
 
 `PDF`:
 
-- The `--combined_pdf` flag outputs an all-in-one `PDF` file (the original `PDF` with all annotated pages).
 - The `--targets pdf` flag outputs a directory with single-page `PDF` files for each annotated page.
+- The `--combined_pdf` flag outputs an all-in-one `PDF` file (the original `PDF` with all annotated pages).
+- The `--modified_pdf` flag outputs an `PDF` file with just the annotated pages.
 
 `PNG`:
 
