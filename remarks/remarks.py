@@ -186,5 +186,6 @@ def run_remarks(
 
         if modified_pdf:
             mod_pdf.save(f"{output_dir}/{name} _remarks-only.pdf")
+            mod_pdf.close()
 
         pdf_src.close()
