@@ -12,6 +12,16 @@ def read_meta_file(path, suffix=".metadata"):
     return data
 
 
+def is_document(path):
+    metadata = read_meta_file(path)
+    return metadata["type"] == 'DocumentType'
+
+
+def get_document_filetype(path):
+    content = read_meta_file(path, suffix=".content")
+    return content["fileType"]
+
+
 def get_visible_name(path):
     metadata = read_meta_file(path)
     return metadata["visibleName"]
@@ -45,7 +55,7 @@ def get_ui_path(path):
 
 
 def get_pdf_page_dims(path, page_idx=0):
-    with fitz.open(path) as doc:
+    with fitz.open(path.with_name(f"{path.stem}.pdf")) as doc:
         first_page = doc.loadPage(page_idx)
         return first_page.rect.width, first_page.rect.height
 
