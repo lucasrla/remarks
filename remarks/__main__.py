@@ -4,7 +4,7 @@ import argparse
 from remarks import run_remarks
 
 __prog_name__ = "remarks"
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 
 def main():
@@ -48,7 +48,14 @@ def main():
         dest="modified_pdf",
         action="store_true",
         help="Create a '*_remarks-only.pdf' file with all annotated pages",
-    )    
+    )
+    parser.add_argument(
+        "-f",
+        "--assume_wellformed",
+        dest="assume_wellformed",
+        action="store_true",
+        help="Assumes a well-formed PDF where words are in order."
+    )
     parser.add_argument(
         "-v",
         "--version",
@@ -60,7 +67,8 @@ def main():
         "-h", "--help", action="help", help="Show this help message",
     )
 
-    parser.set_defaults(combined_pdf=False, modified_pdf=False)
+    parser.set_defaults(combined_pdf=False, modified_pdf=False,
+                        assume_wellformed=False)
 
     args = parser.parse_args()
     args_dict = vars(args)

@@ -13,6 +13,7 @@ from .conversion.parsing import (
 )
 from .conversion.drawing import draw_svg, draw_pdf
 from .conversion.text import md_from_blocks, is_text_extractable
+from .conversion.text import extract_highlighted_words_nosort
 from .conversion.ocrmypdf import is_tool, run_ocr
 
 from .utils import (
@@ -40,6 +41,7 @@ def run_remarks(
     ann_type=None,
     combined_pdf=False,
     modified_pdf=False,
+    assume_wellformed=False
 ):
     for path in pathlib.Path(f"{input_dir}/").glob("*.metadata"):
         if not is_document(path):
@@ -73,7 +75,10 @@ def run_remarks(
             print(f"PDF in-device directory: {in_device_path}")
 
             for rm_file in rm_files:
-                page_idx = pages.index(f"{rm_file.stem}")
+                try:
+                    page_idx = pages.index(f"{rm_file.stem}")
+                except:
+                    page_idx = int(f"{rm_file.stem}")
 
                 pdf_w, pdf_h = get_pdf_page_dims(path, page_idx=page_idx)
                 scale = get_pdf_to_device_ratio(pdf_w, pdf_h)
@@ -147,7 +152,10 @@ def run_remarks(
 
                 if "md" in targets:
                     if should_extract_text and (extractable or ocred):
-                        md_str = md_from_blocks(ann_page)
+                        if assume_wellformed:
+                            md_str = extract_highlighted_words_nosort(ann_page)
+                        else:
+                            md_str = md_from_blocks(ann_page)
                         # TODO: add proper table extraction?
                         # https://pymupdf.readthedocs.io/en/latest/faq.html#how-to-extract-tables-from-documents
 

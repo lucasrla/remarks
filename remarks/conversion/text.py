@@ -14,10 +14,10 @@ def get_highlight_rects(page):
     return highlight_rects
 
 
-def get_page_words(page):
+def get_page_words(page, flags=(1 + 2 + 8)):
     # https://pymupdf.readthedocs.io/en/latest/app2.html#text-extraction-flags-defaults
     # https://github.com/pymupdf/PyMuPDF/issues/363
-    words = page.getText("words", flags=(1 + 2 + 8))
+    words = page.getText("words", flags=flags)
 
     words.sort(key=lambda w: (w[3], w[0]))  # ascending y, then x coordinate
     # print(words)
@@ -25,8 +25,8 @@ def get_page_words(page):
     return words
 
 
-def get_page_blocks(page):
-    blocks = page.getText("blocks", flags=(1 + 2 + 8))
+def get_page_blocks(page, flags=(1 + 2 + 8)):
+    blocks = page.getText("blocks", flags=flags)
 
     # print(blocks)
     txt_blocks = [b[4] for b in blocks]
@@ -58,11 +58,48 @@ def is_text_extractable(page):
     # https://github.com/adobe-type-tools/cmap-resources/blob/master/Adobe-Identity-0/CMap/Identity-H
     # https://github.com/adobe-type-tools/perl-scripts/blob/master/cmap-tool.pl
 
-    if b"\xef\xbf\xbd" in text_encoded:  # �, likely a page with an obsfucated font
-        return False
+    # Commented this out because LaTeX files may contain these character strings
+    #  if b"\xef\xbf\xbd" in text_encoded:  # �, likely a page with an obsfucated font
+    #      return False
         # raise ValueError(f"Found an unmapped character: �. Something might be off with a PDF font. Check out `page.getFontList(full=True)`")
 
     return True
+
+
+def extract_highlighted_words_nosort(page):
+    '''
+    Modified version of extract_highlighted_words, but without sorting text by
+    physical coordinates.
+    '''
+    words = get_page_words(page, flags=(2))
+    highlight_rects = get_highlight_rects(page)
+
+    # Create a boolean mask for each extracted word, depending on whether it
+    # was highlighted.
+    highlight_mask = [any([fitz.Rect(w[:4]).intersects(rect)
+                           for rect in highlight_rects])
+                      for w in words]
+
+    # Each group of consecutively highlighted words will be joined.
+    new_group = True
+    current_group = []
+    highlighted_groups = []
+    for word, highlighted in zip(words, highlight_mask):
+        if highlighted:
+            current_group.append(word[4])
+            new_group = False
+        else:
+            if len(current_group) > 0:
+                highlighted_groups.append(current_group)
+                current_group = []
+            new_group = True
+    # Append group if it is at the end of the page
+    if len(current_group) > 0:
+        highlighted_groups.append(current_group)
+
+    highlighted_groups = ['- ' + ' '.join(g) for g in highlighted_groups]
+
+    return '\n'.join(highlighted_groups)
 
 
 def extract_highlighted_words(page):
