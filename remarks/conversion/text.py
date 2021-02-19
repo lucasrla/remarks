@@ -14,12 +14,13 @@ def get_highlight_rects(page):
     return highlight_rects
 
 
-def get_page_words(page, flags=(1 + 2 + 8)):
+def get_page_words(page, flags=(1 + 2 + 8), sort=True):
     # https://pymupdf.readthedocs.io/en/latest/app2.html#text-extraction-flags-defaults
     # https://github.com/pymupdf/PyMuPDF/issues/363
     words = page.getText("words", flags=flags)
 
-    words.sort(key=lambda w: (w[3], w[0]))  # ascending y, then x coordinate
+    if sort:
+        words.sort(key=lambda w: (w[3], w[0]))  # ascending y, then x coordinate
     # print(words)
 
     return words
@@ -71,7 +72,7 @@ def extract_highlighted_words_nosort(page):
     Modified version of extract_highlighted_words, but without sorting text by
     physical coordinates.
     '''
-    words = get_page_words(page, flags=(2))
+    words = get_page_words(page, flags=(2), sort=False)
     highlight_rects = get_highlight_rects(page)
 
     # Create a boolean mask for each extracted word, depending on whether it
