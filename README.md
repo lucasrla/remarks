@@ -70,21 +70,28 @@ If [OCRmyPDF](https://github.com/jbarlow83/OCRmyPDF) is available on your comput
 
 To get `remarks` up and running on your local machine, follow the instructions below:
 
-## 1. Copy files from reMarkable's `xochitl` directory to your computer
+## 1. Copy reMarkable's files to your computer
 
-I find using `rsync` the easiest way to copy reMarkable's internal files from/to your tablet. Check out the repository [lucasrla/remarkable-utils](https://github.com/lucasrla/remarkable-utils) for the SSH & `rsync` setup I use (which includes automatic backups based on `cron`). 
+In order to reconstruct your highlights and annotations, `remarks` works on some specific reMarkable's internal files. These internal files need to be available on your computer. There are, broadly speaking, four options for getting them to your computer. Choose the one that fits you the best:
 
-Alternatively, you can use the good old `scp` to copy the reMarkable's internal files from the tablet to your computer:
+- **Use by reMarkable's official desktop application**  
+  If you have a [reMarkable's official desktop app](https://support.remarkable.com/hc/en-us/articles/360002665378-Desktop-app) installed, the files we will need are already easily available on your computer. For macOS users, the files are located at `~/Library/Application\ Support/remarkable/desktop`. To avoid interfering with reMarkable's own app, all we need to do is copy and paste all the contents of `~/Library/Application\ Support/remarkable/desktop` to another directory you can safely interact with (for instance, a new one called `~/Documents/remarkable/docs`).
 
-- On your reMarkable tablet, go to `Menu > Settings > Help > About`, then tap on `Copyrights and licenses`. In `General information`, right after the section titled "GPLv3 Compliance", there will be the username (`root`), password and IP addresses needed for `SSH`.
+- **Use `rsync` ([about](https://en.wikipedia.org/wiki/Rsync))**  
+  Check out the repository [@lucasrla/remarkable-utils](https://github.com/lucasrla/remarkable-utils) for the SSH & `rsync` setup I use (which includes automatic backups based on `cron`). 
 
-- Using these credentials, `scp` the contents of `/home/root/.local/share/remarkable/xochitl` from your reMarkable to a directory on your computer. (Copying may take a while depending on the size of your document collection and the quality of your wifi network.)
+- **Use `scp` ([about](https://en.wikipedia.org/wiki/Secure_copy_protocol))**  
+  On your reMarkable tablet, go to `Menu > Settings > Help > About`, then tap on `Copyrights and licenses`. In `General information`, right after the section titled "GPLv3 Compliance", there will be the username (`root`), password and IP addresses needed for `SSH`. Using these credentials, `scp` the contents of `/home/root/.local/share/remarkable/xochitl` from your reMarkable to a directory on your computer. (Copying may take a while depending on the size of your document collection and the quality of your WiFi network.) To prevent any unintented interruptions, you can (optionally) switch off the `Auto sleep` feature in `Menu > Settings > Battery` before transferring your files.
 
-- To prevent any unintented interruptions, you can (optionally) switch off the `Auto sleep` feature in `Menu > Settings > Battery` before transferring your files.
+- **Use [@juruen/rmapi](https://github.com/juruen/rmapi) or [@subutux/rmapy](https://github.com/subutux/rmapy)**  
+  Both are free and open source software that allow you to access your reMarkable tablet files through the reMarkable's cloud service.
 
 ## 2. Clone this repository and install the dependencies
 
-> **Users on macOS Big Sur**: If you use `pip`, it is best to upgrade it to `>=20.3` via `pip install --upgrade pip`. Version `20.3` includes a new dependency resolver and a fix to an annoying issue with macOS Big Sur [[#988](https://github.com/pypa/pip/issues/988#issuecomment-735451004)]. If you use `poetry`, it seems the annoying issue is still there, follow [[#3458](https://github.com/python-poetry/poetry/issues/3458)] for updates. For more information on these issues and their impact to the installation of `remarks`, see [[#7](https://github.com/lucasrla/remarks/issues/7)].
+> **⚠️ Users on macOS Big Sur:**  
+> - If you use `pip`, upgrade it to `>=20.3` via `pip install --upgrade pip`. [[#988](https://github.com/pypa/pip/issues/988#issuecomment-735451004)]
+> - If you use `poetry`, it seems a fix is still pending. Follow [[#3458](https://github.com/python-poetry/poetry/issues/3458)] for updates
+> - For more information on the impact of this issue to installing `remarks`, see [[#7](https://github.com/lucasrla/remarks/issues/7)]
 
 ```sh
 ### 2.1 Clone
