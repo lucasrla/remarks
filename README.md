@@ -72,10 +72,12 @@ To get `remarks` up and running on your local machine, follow the instructions b
 
 ## 1. Copy reMarkable's files to your computer
 
-In order to reconstruct your highlights and annotations, `remarks` works on some specific reMarkable's internal files. These internal files need to be available on your computer. There are, broadly speaking, four options for getting them to your computer. Choose the one that fits you the best:
+In order to reconstruct your highlights and annotations, `remarks` relies on specific files that are created by the reMarkable device as you use it. Because these specific files are internal to the reMarkable device, first we need to transfer them to your computer.
 
-- **Use by reMarkable's official desktop application**  
-  If you have a [reMarkable's official desktop app](https://support.remarkable.com/hc/en-us/articles/360002665378-Desktop-app) installed, the files we will need are already easily available on your computer. For macOS users, the files are located at `~/Library/Application\ Support/remarkable/desktop`. To avoid interfering with reMarkable's own app, all we need to do is copy and paste all the contents of `~/Library/Application\ Support/remarkable/desktop` to another directory you can safely interact with (for instance, a new one called `~/Documents/remarkable/docs`).
+There are, broadly speaking, four options for getting them to your computer. Choose the one that fits you the best:
+
+- **Copy from reMarkable's official desktop application**  
+  If you have a [reMarkable's official desktop app](https://support.remarkable.com/hc/en-us/articles/360002665378-Desktop-app) installed, the files we need are already easily available on your computer. For macOS users, the files are located at `~/Library/Application\ Support/remarkable/desktop`. To avoid interfering with reMarkable's own app, all we need to do is copy and paste all the contents of `~/Library/Application\ Support/remarkable/desktop` to another directory you can safely interact with (for instance, a new one called `~/Documents/remarkable/docs`).
 
 - **Use `rsync` ([about](https://en.wikipedia.org/wiki/Rsync))**  
   Check out the repository [@lucasrla/remarkable-utils](https://github.com/lucasrla/remarkable-utils) for the SSH & `rsync` setup I use (which includes automatic backups based on `cron`). 
