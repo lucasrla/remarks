@@ -74,6 +74,7 @@ def run_remarks(
 
             if modified_pdf:
                 mod_pdf = fitz.open()
+                pages_order = []
 
             print(f"Working on PDF file: {path.stem}")
             print(f'PDF visibleName: "{name}"')
@@ -187,6 +188,7 @@ def run_remarks(
 
                 if modified_pdf:
                     mod_pdf.insertPDF(ann_doc, start_at=-1)
+                    pages_order.append(page_idx)
 
                 if combined_pdf:
                     x_max, y_max = get_ann_max_bound(parsed_data)
@@ -209,6 +211,8 @@ def run_remarks(
                 pdf_src.save(f"{output_dir}/{name} _remarks.pdf")
 
             if modified_pdf:
+                pages_order = sorted(range(len(pages_order)), key=pages_order.__getitem__)
+                mod_pdf.select(pages_order)
                 mod_pdf.save(f"{output_dir}/{name} _remarks-only.pdf")
                 mod_pdf.close()
 
