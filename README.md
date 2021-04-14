@@ -57,7 +57,7 @@ And then use `remarks` to export annotated pages to `Markdown`, `PDF`, `PNG`, or
 
 Because `remarks` depends only on [PyMuPDF](https://github.com/pymupdf/PyMuPDF) and [Shapely](https://github.com/Toblerity/Shapely), there is no need to install `imagemagick`, `opencv`, or any additional image library. Both PyMuPDF and Shapely have pre-built wheels [[1](https://pypi.org/project/PyMuPDF/1.18.4/#files), [2](https://pypi.org/project/Shapely/1.7.1/#files)] for several platforms (macOS, Linux, Windows) and recent Python versions, so their installation should be easy and smooth for most setups.
 
-I use `remarks` with a [reMarkable 1](https://remarkable.com/store/remarkable) tablet running software version `2.5.0.27` on macOS Catalina (`10.15.x`) with CPython `3.8.x`. I don't have other devices to test it thoroughly, but I expect `remarks` to work just fine in all common setups, including with [remarkable 2](https://remarkable.com/store/remarkable-2/).
+I use `remarks` with a [reMarkable 1](https://remarkable.com/store/remarkable) tablet running software version `2.6.2.75` on macOS Catalina (`10.15.x`) with CPython `3.8.x`. I don't have other devices to test it thoroughly, but I expect `remarks` to work just fine in all common setups, including with [remarkable 2](https://remarkable.com/store/remarkable-2/).
 
 Incidentally, please help me keep track of `remarks` compatibility across different setups:
 
@@ -77,7 +77,7 @@ In order to reconstruct your highlights and annotations, `remarks` relies on spe
 There are, broadly speaking, four options for getting them to your computer. Choose the one that fits you the best:
 
 - **Copy from reMarkable's official desktop application**  
-  If you have a [reMarkable's official desktop app](https://support.remarkable.com/hc/en-us/articles/360002665378-Desktop-app) installed, the files we need are already easily available on your computer. For macOS users, the files are located at `~/Library/Application\ Support/remarkable/desktop`. To avoid interfering with reMarkable's own app, all we need to do is copy and paste all the contents of `~/Library/Application\ Support/remarkable/desktop` to another directory you can safely interact with (for instance, a new one called `~/Documents/remarkable/docs`).
+  If you have a [reMarkable's official desktop app](https://support.remarkable.com/hc/en-us/articles/360002665378-Desktop-app) installed, the files we need are already easily available on your computer. For macOS users, the files are located at `~/Library/Application\ Support/remarkable/desktop`. To avoid interfering with reMarkable's official app, copy and paste all the contents of `~/Library/Application\ Support/remarkable/desktop` to another directory (one that you can safely interact with, say, `~/Documents/remarkable/docs`).
 
 - **Use `rsync` ([about](https://en.wikipedia.org/wiki/Rsync))**  
   Check out the repository [@lucasrla/remarkable-utils](https://github.com/lucasrla/remarkable-utils) for the SSH & `rsync` setup I use (which includes automatic backups based on `cron`). 
