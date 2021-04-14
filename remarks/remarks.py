@@ -13,6 +13,7 @@ from .conversion.parsing import (
 )
 from .conversion.drawing import draw_svg, draw_pdf
 from .conversion.text import md_from_blocks, is_text_extractable
+from .conversion.text import extract_highlighted_words_nosort
 from .conversion.ocrmypdf import is_tool, run_ocr
 
 from .utils import (
@@ -40,6 +41,7 @@ def run_remarks(
     ann_type=None,
     combined_pdf=False,
     modified_pdf=False,
+    assume_wellformed=False,
     combined_md=False,
     md_page_numbers=False
 ):
@@ -78,7 +80,10 @@ def run_remarks(
             print(f"PDF in-device directory: {in_device_path}")
 
             for rm_file in rm_files:
-                page_idx = pages.index(f"{rm_file.stem}")
+                try:
+                    page_idx = pages.index(f"{rm_file.stem}")
+                except:
+                    page_idx = int(f"{rm_file.stem}")
 
                 pdf_w, pdf_h = get_pdf_page_dims(path, page_idx=page_idx)
                 scale = get_pdf_to_device_ratio(pdf_w, pdf_h)
@@ -115,7 +120,7 @@ def run_remarks(
                 ann_page.showPDFpage(pdf_rect, pdf_src, pno=page_idx)
 
                 should_extract_text = ann_type != "scribbles" and highlights
-                extractable = is_text_extractable(pdf_src[page_idx])
+                extractable = is_text_extractable(pdf_src[page_idx], assume_wellformed=assume_wellformed)
                 ocred = False
 
                 if should_extract_text and not extractable and is_tool("ocrmypdf"):
@@ -152,7 +157,10 @@ def run_remarks(
 
                 if "md" in targets or combined_md:
                     if should_extract_text and (extractable or ocred):
-                        md_str = md_from_blocks(ann_page)
+                        if assume_wellformed:
+                            md_str = extract_highlighted_words_nosort(ann_page)
+                        else:
+                            md_str = md_from_blocks(ann_page)
                         # TODO: add proper table extraction?
                         # https://pymupdf.readthedocs.io/en/latest/faq.html#how-to-extract-tables-from-documents
 
@@ -215,7 +223,6 @@ def run_remarks(
                     combined_md_str = ''.join([s[1] for s in combined_md_strs])
                 with open(f"{output_dir}/{name}.md", "w") as f:
                     f.write(combined_md_str)
-
 
             pdf_src.close()
         else:

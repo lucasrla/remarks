@@ -9,6 +9,6 @@ from .parsing import (
 
 from .drawing import draw_svg, draw_pdf
 
-from .text import md_from_blocks, is_text_extractable
+from .text import md_from_blocks, is_text_extractable, extract_highlighted_words_nosort
 
 from .ocrmypdf import is_tool, run_ocr
