@@ -41,7 +41,9 @@ def run_remarks(
     ann_type=None,
     combined_pdf=False,
     modified_pdf=False,
-    assume_wellformed=False
+    assume_wellformed=False,
+    combined_md=False,
+    md_page_numbers=False
 ):
     for path in pathlib.Path(f"{input_dir}/").glob("*.metadata"):
         if not is_document(path):
@@ -66,6 +68,9 @@ def run_remarks(
             out_path.mkdir(parents=True, exist_ok=True)
 
             pdf_src = fitz.open(path.with_name(f"{path.stem}.pdf"))
+
+            if combined_md:
+                combined_md_strs = []
 
             if modified_pdf:
                 mod_pdf = fitz.open()
@@ -150,7 +155,7 @@ def run_remarks(
                     subdir = prepare_subdir(out_path, "png")
                     pixmap.writePNG(f"{subdir}/{page_idx:0{page_magnitude}}.png")
 
-                if "md" in targets:
+                if "md" in targets or combined_md:
                     if should_extract_text and (extractable or ocred):
                         if assume_wellformed:
                             md_str = extract_highlighted_words_nosort(ann_page)
@@ -161,9 +166,13 @@ def run_remarks(
 
                         # TODO: maybe also add highlighted image (pixmap) extraction?
 
-                        subdir = prepare_subdir(out_path, "md")
-                        with open(f"{subdir}/{page_idx:0{page_magnitude}}.md", "w") as f:
-                            f.write(md_str)
+                        if combined_md:
+                            combined_md_strs += [(page_idx, md_str + '\n')]
+                        if "md" in targets:
+                            subdir = prepare_subdir(out_path, "md")
+                            with open(f"{subdir}/{page_idx:0{page_magnitude}}.md", "w") as f:
+                                f.write(md_str)
+
 
                     elif not highlights:
                         print(f"Couldn't find any highlighted text on page #{page_idx}")
@@ -202,6 +211,19 @@ def run_remarks(
             if modified_pdf:
                 mod_pdf.save(f"{output_dir}/{name} _remarks-only.pdf")
                 mod_pdf.close()
+
+            if combined_md:
+                combined_md_strs = sorted(combined_md_strs, key=lambda t:t[0])
+                if md_page_numbers:
+                    # Generate subheaders for each page
+                    combined_md_str = ''.join([f"\nPage {s[0]}\n--------\n" + s[1]
+                                               for s in combined_md_strs])
+                    combined_md_str = f"{name}\n========\n" + combined_md_str
+                else:
+                    combined_md_str = ''.join([s[1] for s in combined_md_strs])
+                with open(f"{output_dir}/{name}.md", "w") as f:
+                    f.write(combined_md_str)
+
 
             pdf_src.close()
         else:
