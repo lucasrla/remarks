@@ -120,7 +120,7 @@ def run_remarks(
                 ann_page.showPDFpage(pdf_rect, pdf_src, pno=page_idx)
 
                 should_extract_text = ann_type != "scribbles" and highlights
-                extractable = is_text_extractable(pdf_src[page_idx])
+                extractable = is_text_extractable(pdf_src[page_idx], assume_wellformed=assume_wellformed)
                 ocred = False
 
                 if should_extract_text and not extractable and is_tool("ocrmypdf"):
@@ -223,7 +223,6 @@ def run_remarks(
                     combined_md_str = ''.join([s[1] for s in combined_md_strs])
                 with open(f"{output_dir}/{name}.md", "w") as f:
                     f.write(combined_md_str)
-
 
             pdf_src.close()
         else:

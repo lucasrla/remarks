@@ -35,7 +35,7 @@ def get_page_blocks(page, flags=(1 + 2 + 8)):
     return txt_blocks
 
 
-def is_text_extractable(page):
+def is_text_extractable(page, assume_wellformed=False):
     # TODO: improve this check, it is still very rudimentary
 
     text_encoded = page.getText("text").encode("utf-8")
@@ -59,9 +59,13 @@ def is_text_extractable(page):
     # https://github.com/adobe-type-tools/cmap-resources/blob/master/Adobe-Identity-0/CMap/Identity-H
     # https://github.com/adobe-type-tools/perl-scripts/blob/master/cmap-tool.pl
 
-    # Commented this out because LaTeX files may contain these character strings
-    #  if b"\xef\xbf\xbd" in text_encoded:  # �, likely a page with an obsfucated font
-    #      return False
+    # b"\xef\xbf\xbd" maps to �
+    # it may happen in a page with an obsfucated font
+    # but it seems it might also appear due to perfectly fine LateX equations
+    # see: https://github.com/lucasrla/remarks/pull/19
+    
+    if b"\xef\xbf\xbd" in text_encoded and not assume_wellformed:
+        return False
         # raise ValueError(f"Found an unmapped character: �. Something might be off with a PDF font. Check out `page.getFontList(full=True)`")
 
     return True

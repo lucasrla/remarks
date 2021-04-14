@@ -54,7 +54,7 @@ def main():
         "--assume_wellformed",
         dest="assume_wellformed",
         action="store_true",
-        help="Assumes a well-formed PDF where words are in order."
+        help="Assumes a well-formed PDF, where words are in order and fonts are not obfuscated."
     )
     parser.add_argument(
         "--combined_md",
