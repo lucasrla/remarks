@@ -42,8 +42,7 @@ def run_remarks(
     combined_pdf=False,
     modified_pdf=False,
     assume_wellformed=False,
-    combined_md=False,
-    md_page_numbers=False
+    combined_md=False
 ):
     for path in pathlib.Path(f"{input_dir}/").glob("*.metadata"):
         if not is_document(path):
@@ -120,13 +119,15 @@ def run_remarks(
 
                 ann_page.showPDFpage(pdf_rect, pdf_src, pno=page_idx)
 
-                should_extract_text = ann_type != "scribbles" and highlights
+                should_extract_text = (ann_type != "scribbles") and (len(highlights["layers"]) > 0)
+
                 extractable = is_text_extractable(pdf_src[page_idx], assume_wellformed=assume_wellformed)
+
                 ocred = False
 
                 if should_extract_text and not extractable and is_tool("ocrmypdf"):
                     print(
-                        f"Couldn't extract text from page #{page_idx}. Will OCR it. Hold on\n"
+                        f"- Couldn't extract text from page #{page_idx}. Will OCR it. Hold on\n"
                     )
 
                     tmp_file = "_tmp.pdf"
@@ -156,12 +157,13 @@ def run_remarks(
                     subdir = prepare_subdir(out_path, "png")
                     pixmap.writePNG(f"{subdir}/{page_idx:0{page_magnitude}}.png")
 
-                if "md" in targets or combined_md:
-                    if should_extract_text and (extractable or ocred):
+                if should_extract_text and ("md" in targets or combined_md):
+                    if extractable or ocred:
                         if assume_wellformed:
                             md_str = extract_highlighted_words_nosort(ann_page)
                         else:
                             md_str = md_from_blocks(ann_page)
+
                         # TODO: add proper table extraction?
                         # https://pymupdf.readthedocs.io/en/latest/faq.html#how-to-extract-tables-from-documents
 
@@ -169,22 +171,25 @@ def run_remarks(
 
                         if combined_md:
                             combined_md_strs += [(page_idx, md_str + '\n')]
+
                         if "md" in targets:
                             subdir = prepare_subdir(out_path, "md")
                             with open(f"{subdir}/{page_idx:0{page_magnitude}}.md", "w") as f:
                                 f.write(md_str)
-
-
-                    elif not highlights:
-                        print(f"Couldn't find any highlighted text on page #{page_idx}")
-                    elif ann_type == "scribbles":
-                        print(
-                            "Found some highlighted text but `--ann_type` flag was set to `scribbles` only"
-                        )
+                    
                     else:
                         print(
-                            f"Found highlighted text but couldn't create markdown from page #{page_idx}"
-                        )
+                            f"- Found highlighted text but couldn't extract markdown from highlights on page #{page_idx}"
+                        )                        
+
+                # TODO: add proper a verbose mode (off by default)
+                elif not len(highlights["layers"]) > 0:
+                    print(f"- Couldn't find any highlighted text on page #{page_idx}")
+
+                elif len(highlights["layers"]) > 0 and ann_type == "scribbles":
+                    print(
+                        "- Found some highlighted text but `--ann_type` flag was set to `scribbles` only"
+                    )
 
                 if modified_pdf:
                     mod_pdf.insertPDF(ann_doc, start_at=-1)
@@ -218,16 +223,12 @@ def run_remarks(
 
             if combined_md:
                 combined_md_strs = sorted(combined_md_strs, key=lambda t:t[0])
-                if md_page_numbers:
-                    # Generate subheaders for each page
-                    combined_md_str = ''.join([f"\nPage {s[0]}\n--------\n" + s[1]
-                                               for s in combined_md_strs])
-                    combined_md_str = f"{name}\n========\n" + combined_md_str
-                else:
-                    combined_md_str = ''.join([s[1] for s in combined_md_strs])
+                combined_md_str = ''.join([f"\nPage {s[0]}\n--------\n" + s[1]
+                                            for s in combined_md_strs])
+                combined_md_str = f"{name}\n========\n" + combined_md_str
                 with open(f"{output_dir}/{name}.md", "w") as f:
                     f.write(combined_md_str)
 
             pdf_src.close()
         else:
-            print(f"Skipping document {path.stem}: document type: {filetype} is currently not supported.")
+            print(f"Skipped {filetype} file {path.stem}. Currently, remarks supports only PDF")

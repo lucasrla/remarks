@@ -63,12 +63,6 @@ def main():
         help="Create a single '*.md' file containing all highlighted text",
     )
     parser.add_argument(
-        "--md_page_numbers",
-        dest="md_page_numbers",
-        action="store_true",
-        help="Add page number breaks in combined .md"
-    )
-    parser.add_argument(
         "-v",
         "--version",
         action="version",
@@ -79,8 +73,7 @@ def main():
         "-h", "--help", action="help", help="Show this help message",
     )
 
-    parser.set_defaults(combined_pdf=False, modified_pdf=False,
-                        assume_wellformed=False, combined_md=False, md_page_numbers=False)
+    parser.set_defaults(combined_pdf=False, modified_pdf=False, assume_wellformed=False, combined_md=False)
 
     args = parser.parse_args()
     args_dict = vars(args)
