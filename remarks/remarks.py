@@ -182,7 +182,7 @@ def run_remarks(
                             f"- Found highlighted text but couldn't extract markdown from highlights on page #{page_idx}"
                         )                        
 
-                # TODO: add proper a verbose mode (off by default)
+                # TODO: add a proper verbose mode (which is off by default)
                 elif not len(highlights["layers"]) > 0:
                     print(f"- Couldn't find any highlighted text on page #{page_idx}")
 

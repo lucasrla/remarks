@@ -86,7 +86,7 @@ There are, broadly speaking, four options for getting them to your computer. Cho
   On your reMarkable tablet, go to `Menu > Settings > Help > About`, then tap on `Copyrights and licenses`. In `General information`, right after the section titled "GPLv3 Compliance", there will be the username (`root`), password and IP addresses needed for `SSH`. Using these credentials, `scp` the contents of `/home/root/.local/share/remarkable/xochitl` from your reMarkable to a directory on your computer. (Copying may take a while depending on the size of your document collection and the quality of your WiFi network.) To prevent any unintented interruptions, you can (optionally) switch off the `Auto sleep` feature in `Menu > Settings > Battery` before transferring your files.
 
 - **Use [@juruen/rmapi](https://github.com/juruen/rmapi) or [@subutux/rmapy](https://github.com/subutux/rmapy)**  
-  Both are free and open source software that allow you to access your reMarkable tablet files through the reMarkable's cloud service.
+  Both are free and open source software that allow you to access your reMarkable tablet files through reMarkable's cloud service.
 
 ## 2. Clone this repository and install the dependencies
 
