@@ -1,3 +1,4 @@
+import logging
 import math
 import pathlib
 
@@ -75,9 +76,9 @@ def run_remarks(
                 mod_pdf = fitz.open()
                 pages_order = []
 
-            print(f"Working on PDF file: {path.stem}")
-            print(f'PDF visibleName: "{name}"')
-            print(f"PDF in-device directory: {in_device_path}")
+            logging.info(f"Working on PDF file: {path.stem}")
+            logging.info(f'PDF visibleName: "{name}"')
+            logging.info(f"PDF in-device directory: {in_device_path}")
 
             for rm_file in rm_files:
                 try:
@@ -126,7 +127,7 @@ def run_remarks(
                 ocred = False
 
                 if should_extract_text and not extractable and is_tool("ocrmypdf"):
-                    print(
+                    logging.warning(
                         f"- Couldn't extract text from page #{page_idx}. Will OCR it. Hold on\n"
                     )
 
@@ -176,18 +177,17 @@ def run_remarks(
                             subdir = prepare_subdir(out_path, "md")
                             with open(f"{subdir}/{page_idx:0{page_magnitude}}.md", "w") as f:
                                 f.write(md_str)
-                    
-                    else:
-                        print(
-                            f"- Found highlighted text but couldn't extract markdown from highlights on page #{page_idx}"
-                        )                        
 
-                # TODO: add a proper verbose mode (which is off by default)
+                    else:
+                        logging.warning(
+                            f"- Found highlighted text but couldn't extract markdown from highlights on page #{page_idx}"
+                        )
+
                 elif not len(highlights["layers"]) > 0:
-                    print(f"- Couldn't find any highlighted text on page #{page_idx}")
+                    logging.warning(f"- Couldn't find any highlighted text on page #{page_idx}")
 
                 elif len(highlights["layers"]) > 0 and ann_type == "scribbles":
-                    print(
+                    logging.warning(
                         "- Found some highlighted text but `--ann_type` flag was set to `scribbles` only"
                     )
 
@@ -231,4 +231,4 @@ def run_remarks(
 
             pdf_src.close()
         else:
-            print(f"Skipped {filetype} file {path.stem}. Currently, remarks supports only PDF")
+            logging.warning(f"Skipped {filetype} file {path.stem}. Currently, remarks supports only PDF")

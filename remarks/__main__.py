@@ -1,3 +1,4 @@
+import logging
 import pathlib
 import argparse
 
@@ -69,17 +70,31 @@ def main():
         help="Show version number",
         version="%(prog)s {version}".format(version=__version__),
     )
+
+    parser.add_argument(
+        "-d",
+        "--debug",
+        actions="store_true",
+        help="Print debug statements"
+    )
+
     parser.add_argument(
         "-h", "--help", action="help", help="Show this help message",
     )
 
-    parser.set_defaults(combined_pdf=False, modified_pdf=False, assume_wellformed=False, combined_md=False)
+    parser.set_defaults(combined_pdf=False, modified_pdf=False, assume_wellformed=False, combined_md=False, debug=False)
 
     args = parser.parse_args()
     args_dict = vars(args)
 
     input_dir = args_dict.pop("input_dir")
     output_dir = args_dict.pop("output_dir")
+
+    debug = args_dict.pop("debug")
+
+    logging.basicConfig(format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                                 level=logging.DEBUG if debug else logging.WARNING)
+
 
     if not pathlib.Path(input_dir).exists():
         parser.error(f'Directory "{input_dir}" does not exist.')
