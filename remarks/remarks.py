@@ -49,7 +49,7 @@ def run_remarks(
             continue
 
         filetype = get_document_filetype(path)
-        if filetype == 'pdf':
+        if filetype == 'pdf' or filetype == 'epub': # epub is handled similarly to pdf
             pages = list_pages_uuids(path)
             name = get_visible_name(path)
             rm_files = list_ann_rm_files(path)
@@ -63,7 +63,7 @@ def run_remarks(
             page_magnitude = math.floor(math.log10(len(pages))) + 1
             in_device_path = get_ui_path(path)
 
-            out_path = pathlib.Path(f"{output_dir}/{in_device_path}/{name}/")
+            out_path = pathlib.Path(f"{output_dir}/{in_device_path}/{path.stem}/")
             out_path.mkdir(parents=True, exist_ok=True)
 
             pdf_src = fitz.open(path.with_name(f"{path.stem}.pdf"))
@@ -226,9 +226,9 @@ def run_remarks(
                 combined_md_str = ''.join([f"\nPage {s[0]}\n--------\n" + s[1]
                                             for s in combined_md_strs])
                 combined_md_str = f"{name}\n========\n" + combined_md_str
-                with open(f"{output_dir}/{name}.md", "w") as f:
+                with open(f"{output_dir}/{path.stem}.md", "w") as f:
                     f.write(combined_md_str)
 
             pdf_src.close()
         else:
-            print(f"Skipped {filetype} file {path.stem}. Currently, remarks supports only PDF")
+            print(f"Skipped {filetype} file {path.stem}. Currently, remarks supports only PDF or EPUB")
