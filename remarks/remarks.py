@@ -42,7 +42,8 @@ def run_remarks(
     combined_pdf=False,
     modified_pdf=False,
     assume_wellformed=False,
-    combined_md=False
+    combined_md=False,
+    use_ocr=False
 ):
     for path in pathlib.Path(f"{input_dir}/").glob("*.metadata"):
         if not is_document(path):
@@ -125,7 +126,7 @@ def run_remarks(
 
                 ocred = False
 
-                if should_extract_text and not extractable and is_tool("ocrmypdf"):
+                if should_extract_text and not extractable and use_ocr:
                     print(
                         f"- Couldn't extract text from page #{page_idx}. Will OCR it. Hold on\n"
                     )

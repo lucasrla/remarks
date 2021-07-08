@@ -70,10 +70,16 @@ def main():
         version="%(prog)s {version}".format(version=__version__),
     )
     parser.add_argument(
+        "-ocr",
+        "--use-ocr",
+        action="store_true",
+        help="Use OCRmyPDF, ocrmypdf executable must be accessible on the PATH."
+    )
+    parser.add_argument(
         "-h", "--help", action="help", help="Show this help message",
     )
 
-    parser.set_defaults(combined_pdf=False, modified_pdf=False, assume_wellformed=False, combined_md=False)
+    parser.set_defaults(combined_pdf=False, modified_pdf=False, assume_wellformed=False, combined_md=False, use_ocr=False)
 
     args = parser.parse_args()
     args_dict = vars(args)
@@ -86,6 +92,10 @@ def main():
 
     if not pathlib.Path(output_dir).is_dir():
         pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
+
+    if not is_tool("ocrmypdf") and args_dict.use_ocr:
+        print("Cannot find ocrmypdf in path but --use-ocr option was set to True. Please install ocrmypdf for your system.")
+        sys.exit(1)
 
     run_remarks(input_dir, output_dir, **args_dict)
 
