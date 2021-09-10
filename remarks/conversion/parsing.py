@@ -1,5 +1,7 @@
 import struct
 
+import json
+
 import shapely.geometry as geom  # Shapely
 
 # reMarkable defaults
@@ -71,7 +73,6 @@ def get_pdf_to_device_ratio(pdf_width, pdf_height):
 
 def process_tool_meta(pen, dims, w, opc, cc):
     tool = RM_TOOLS[pen]
-    # print(tool)
 
     if tool == "Brush" or tool == "CalligraphyPen":
         pass
@@ -158,9 +159,15 @@ def split_ann_types(output):
     return highlights, scribbles
 
 
-def parse_rm_file(file_path, dims={"x": RM_WIDTH, "y": RM_HEIGHT}):
+def parse_rm_file(file_path, highlight_file_path, dims={"x": RM_WIDTH, "y": RM_HEIGHT}):
     with open(file_path, "rb") as f:
         data = f.read()
+    # It is possible that the highlight file will not exit
+    try:
+        with open(highlight_file_path, "rb") as high_f:
+            high_data = json.load(high_f)
+    except:
+        high_data = {}
 
     expected_header_v3 = b"reMarkable .lines file, version=3          "
     expected_header_v5 = b"reMarkable .lines file, version=5          "
@@ -230,7 +237,57 @@ def parse_rm_file(file_path, dims={"x": RM_WIDTH, "y": RM_HEIGHT}):
 
             l["strokes"][tool]["segments"][seg_name]["points"].append(p)
 
-        output["layers"].append(l)
+        # Since I keep the same l, need to wait to append until later
+        #output["layers"].append(l)
+
+    # This should apply the "new" highlights in v2.8 and later if they exist
+    # for this file. I am going to assume that it is within the rM page,
+    # because it sort of has to by definition.... If it is highlighting text,
+    # then the text has to be on the page....
+    # Loop through all the rectangles
+    temp_cnt = 0
+
+    for hl in high_data["highlights"][0]:
+        p = []
+        temp_cnt += 1
+        # First, see if the highlighter18 is added
+        w = 0
+        opc = 0
+        cc = 0
+        tool, tool_meta, stroke_width, opacity = process_tool_meta(
+            18, dims, w, opc, cc
+        )
+
+        # I am going to overwrite the stroke width by the height of the
+        # highlight. Since I do this, I think I need a new segment each time
+        # since the stroke width might change due to text height
+        stroke_width = hl["rects"][0]["height"]
+        seg_name = "new"+ str(temp_cnt)
+
+        if tool not in l["strokes"].keys():
+            l["strokes"] = update_stroke_dict(l["strokes"], tool, tool_meta)
+        if seg_name not in l["strokes"][tool].keys():
+            l["strokes"][tool]["segments"] = update_seg_dict(
+                l["strokes"][tool]["segments"], seg_name, opacity, stroke_width
+            )
+
+        # Think I need all four points?
+        x = hl["rects"][0]["x"]
+        y = hl["rects"][0]["y"]
+        xpos, ypos = adjust_xypos_sizes(x, y, dims)
+        p.append((f"{xpos:.3f}",f"{ypos:.3f}"))
+        x = hl["rects"][0]["x"] + hl["rects"][0]["width"]
+        xpos, ypos = adjust_xypos_sizes(x, y, dims)
+        p.append((f"{xpos:.3f}",f"{ypos:.3f}"))
+        y = hl["rects"][0]["y"] + hl["rects"][0]["height"]
+        xpos, ypos = adjust_xypos_sizes(x, y, dims)
+        p.append((f"{xpos:.3f}",f"{ypos:.3f}"))
+        x = hl["rects"][0]["x"]
+        xpos, ypos = adjust_xypos_sizes(x, y, dims)
+        p.append((f"{xpos:.3f}",f"{ypos:.3f}"))
+        l["strokes"][tool]["segments"][seg_name]["points"].append(p)
+
+    output["layers"].append(l)
 
     # Quick and dirty workaround to split highlights and scribbles
     # TODO: refactor!

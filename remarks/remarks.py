@@ -24,6 +24,7 @@ from .utils import (
     get_pdf_page_dims,
     list_pages_uuids,
     list_ann_rm_files,
+    list_highlight_rm_files,
 )
 
 
@@ -53,6 +54,7 @@ def run_remarks(
             pages = list_pages_uuids(path)
             name = get_visible_name(path)
             rm_files = list_ann_rm_files(path)
+            rm_highlight_files = list_highlight_rm_files(path)
 
             if pdf_name and (pdf_name not in name):
                 continue
@@ -88,7 +90,16 @@ def run_remarks(
                 pdf_w, pdf_h = get_pdf_page_dims(path, page_idx=page_idx)
                 scale = get_pdf_to_device_ratio(pdf_w, pdf_h)
 
-                highlights, scribbles = parse_rm_file(rm_file)
+                # It seems to me, that if there is a "highlights" page, then
+                # there is also an annotated page in rm_files. I am going to
+                # assume this
+                # However, it is possible that a page has annotations but does
+                # not have a highlight. So if this file does not exist, need
+                # test for it in parse_rm_file
+                # Get the highlight file for this rm_file. 
+                rm_highlight_file = pathlib.Path(f"{input_dir}/{path.stem}.highlights/{rm_file.stem}.json")
+
+                highlights, scribbles = parse_rm_file(rm_file,rm_highlight_file)
 
                 if ann_type == "highlights":
                     parsed_data = highlights
