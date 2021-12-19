@@ -248,7 +248,6 @@ def parse_rm_file(file_path, highlight_file_path, dims={"x": RM_WIDTH, "y": RM_H
     temp_cnt = 0
 
     for hl in high_data["highlights"][0]:
-        p = []
         temp_cnt += 1
         # First, see if the highlighter18 is added
         w = 0
@@ -261,8 +260,11 @@ def parse_rm_file(file_path, highlight_file_path, dims={"x": RM_WIDTH, "y": RM_H
         # I am going to overwrite the stroke width by the height of the
         # highlight. Since I do this, I think I need a new segment each time
         # since the stroke width might change due to text height
-        stroke_width = hl["rects"][0]["height"]
+        # UPDATE FOR rM v2.11
+        # Now, highlights can have multiple rectangles per highlight. 
+        # Need to loop through them. But a segment is a rect
         seg_name = "new"+ str(temp_cnt)
+        stroke_width = hl["rects"][0]["height"]
 
         if tool not in l["strokes"].keys():
             l["strokes"] = update_stroke_dict(l["strokes"], tool, tool_meta)
@@ -271,21 +273,24 @@ def parse_rm_file(file_path, highlight_file_path, dims={"x": RM_WIDTH, "y": RM_H
                 l["strokes"][tool]["segments"], seg_name, opacity, stroke_width
             )
 
-        # Think I need all four points?
-        x = hl["rects"][0]["x"]
-        y = hl["rects"][0]["y"]
-        xpos, ypos = adjust_xypos_sizes(x, y, dims)
-        p.append((f"{xpos:.3f}",f"{ypos:.3f}"))
-        x = hl["rects"][0]["x"] + hl["rects"][0]["width"]
-        xpos, ypos = adjust_xypos_sizes(x, y, dims)
-        p.append((f"{xpos:.3f}",f"{ypos:.3f}"))
-        y = hl["rects"][0]["y"] + hl["rects"][0]["height"]
-        xpos, ypos = adjust_xypos_sizes(x, y, dims)
-        p.append((f"{xpos:.3f}",f"{ypos:.3f}"))
-        x = hl["rects"][0]["x"]
-        xpos, ypos = adjust_xypos_sizes(x, y, dims)
-        p.append((f"{xpos:.3f}",f"{ypos:.3f}"))
-        l["strokes"][tool]["segments"][seg_name]["points"].append(p)
+        for rn in hl["rects"]:
+
+            p = []
+            # Think I need all four points?
+            x = rn["x"]
+            y = rn["y"]
+            xpos, ypos = adjust_xypos_sizes(x, y, dims)
+            p.append((f"{xpos:.3f}",f"{ypos:.3f}"))
+            x = rn["x"] + rn["width"]
+            xpos, ypos = adjust_xypos_sizes(x, y, dims)
+            p.append((f"{xpos:.3f}",f"{ypos:.3f}"))
+            y = rn["y"] + rn["height"]
+            xpos, ypos = adjust_xypos_sizes(x, y, dims)
+            p.append((f"{xpos:.3f}",f"{ypos:.3f}"))
+            x = rn["x"]
+            xpos, ypos = adjust_xypos_sizes(x, y, dims)
+            p.append((f"{xpos:.3f}",f"{ypos:.3f}"))
+            l["strokes"][tool]["segments"][seg_name]["points"].append(p)
 
     output["layers"].append(l)
 
