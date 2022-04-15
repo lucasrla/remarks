@@ -105,15 +105,19 @@ def draw_pdf(data, page, color=True, inplace=False):
             # addHighlightAnnot function. It can handle a list of rectangles
             # and will joint them into one annotation.
             #annot = page.addHighlightAnnot(seg_rect)
-            annot = page.addHighlightAnnot(seg_data["rects"])
+            # Sometimes small highlights will not be valid. If so, just print warning and skip
+            try:
+                annot = page.addHighlightAnnot(seg_data["rects"])
+                # TODO: setOpacity and setBorder not working with HighlightAnnot
+                # maybe related to https://github.com/pymupdf/PyMuPDF/issues/421
+                # see also: https://pymupdf.readthedocs.io/en/latest/faq.html#how-to-add-and-modify-annotations
 
-            # TODO: setOpacity and setBorder not working with HighlightAnnot
-            # maybe related to https://github.com/pymupdf/PyMuPDF/issues/421
-            # see also: https://pymupdf.readthedocs.io/en/latest/faq.html#how-to-add-and-modify-annotations
+                annot.setOpacity(seg_data["opacity"])
+                annot.setBorder(width=seg_data["stroke-width"])
+                annot.update()
 
-            annot.setOpacity(seg_data["opacity"])
-            annot.setBorder(width=seg_data["stroke-width"])
-            annot.update()
+            except:
+                print("Error drawing Highlight Rectangle")
 
         # Scribbles
         else:

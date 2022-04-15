@@ -168,6 +168,7 @@ def parse_rm_file(file_path, highlight_file_path, dims={"x": RM_WIDTH, "y": RM_H
             high_data = json.load(high_f)
     except:
         high_data = {}
+        print("No Highlights File!! Probably only annotations")
 
     expected_header_v3 = b"reMarkable .lines file, version=3          "
     expected_header_v5 = b"reMarkable .lines file, version=5          "
@@ -247,50 +248,54 @@ def parse_rm_file(file_path, highlight_file_path, dims={"x": RM_WIDTH, "y": RM_H
     # Loop through all the rectangles
     temp_cnt = 0
 
-    for hl in high_data["highlights"][0]:
-        temp_cnt += 1
-        # First, see if the highlighter18 is added
-        w = 0
-        opc = 0
-        cc = 0
-        tool, tool_meta, stroke_width, opacity = process_tool_meta(
-            18, dims, w, opc, cc
-        )
-
-        # I am going to overwrite the stroke width by the height of the
-        # highlight. Since I do this, I think I need a new segment each time
-        # since the stroke width might change due to text height
-        # UPDATE FOR rM v2.11
-        # Now, highlights can have multiple rectangles per highlight. 
-        # Need to loop through them. But a segment is a rect
-        seg_name = "new"+ str(temp_cnt)
-        stroke_width = hl["rects"][0]["height"]
-
-        if tool not in l["strokes"].keys():
-            l["strokes"] = update_stroke_dict(l["strokes"], tool, tool_meta)
-        if seg_name not in l["strokes"][tool].keys():
-            l["strokes"][tool]["segments"] = update_seg_dict(
-                l["strokes"][tool]["segments"], seg_name, opacity, stroke_width
+    # Only do this if the highlight file exists. If it does not exist, it 
+    # probably means that there is an annotation on this page, but no
+    # highlights.
+    if high_data:
+        for hl in high_data["highlights"][0]:
+            temp_cnt += 1
+            # First, see if the highlighter18 is added
+            w = 0
+            opc = 0
+            cc = 0
+            tool, tool_meta, stroke_width, opacity = process_tool_meta(
+                18, dims, w, opc, cc
             )
 
-        for rn in hl["rects"]:
+            # I am going to overwrite the stroke width by the height of the
+            # highlight. Since I do this, I think I need a new segment each time
+            # since the stroke width might change due to text height
+            # UPDATE FOR rM v2.11
+            # Now, highlights can have multiple rectangles per highlight. 
+            # Need to loop through them. But a segment is a rect
+            seg_name = "new"+ str(temp_cnt)
+            stroke_width = hl["rects"][0]["height"]
 
-            p = []
-            # Think I need all four points?
-            x = rn["x"]
-            y = rn["y"]
-            xpos, ypos = adjust_xypos_sizes(x, y, dims)
-            p.append((f"{xpos:.3f}",f"{ypos:.3f}"))
-            x = rn["x"] + rn["width"]
-            xpos, ypos = adjust_xypos_sizes(x, y, dims)
-            p.append((f"{xpos:.3f}",f"{ypos:.3f}"))
-            y = rn["y"] + rn["height"]
-            xpos, ypos = adjust_xypos_sizes(x, y, dims)
-            p.append((f"{xpos:.3f}",f"{ypos:.3f}"))
-            x = rn["x"]
-            xpos, ypos = adjust_xypos_sizes(x, y, dims)
-            p.append((f"{xpos:.3f}",f"{ypos:.3f}"))
-            l["strokes"][tool]["segments"][seg_name]["points"].append(p)
+            if tool not in l["strokes"].keys():
+                l["strokes"] = update_stroke_dict(l["strokes"], tool, tool_meta)
+            if seg_name not in l["strokes"][tool].keys():
+                l["strokes"][tool]["segments"] = update_seg_dict(
+                    l["strokes"][tool]["segments"], seg_name, opacity, stroke_width
+                )
+
+            for rn in hl["rects"]:
+
+                p = []
+                # Think I need all four points?
+                x = rn["x"]
+                y = rn["y"]
+                xpos, ypos = adjust_xypos_sizes(x, y, dims)
+                p.append((f"{xpos:.3f}",f"{ypos:.3f}"))
+                x = rn["x"] + rn["width"]
+                xpos, ypos = adjust_xypos_sizes(x, y, dims)
+                p.append((f"{xpos:.3f}",f"{ypos:.3f}"))
+                y = rn["y"] + rn["height"]
+                xpos, ypos = adjust_xypos_sizes(x, y, dims)
+                p.append((f"{xpos:.3f}",f"{ypos:.3f}"))
+                x = rn["x"]
+                xpos, ypos = adjust_xypos_sizes(x, y, dims)
+                p.append((f"{xpos:.3f}",f"{ypos:.3f}"))
+                l["strokes"][tool]["segments"][seg_name]["points"].append(p)
 
     output["layers"].append(l)
 

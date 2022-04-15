@@ -95,7 +95,7 @@ def run_remarks(
                 # assume this
                 # However, it is possible that a page has annotations but does
                 # not have a highlight. So if this file does not exist, need
-                # test for it in parse_rm_file
+                # test for it in parse_rm_file and skip this page if no highlights
                 # Get the highlight file for this rm_file. 
                 rm_highlight_file = pathlib.Path(f"{input_dir}/{path.stem}.highlights/{rm_file.stem}.json")
 
