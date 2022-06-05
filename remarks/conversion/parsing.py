@@ -86,7 +86,6 @@ def process_tool_meta(pen, dims, w, opc, cc):
     elif tool == "Highlighter":
         w = 30
         opc = 0.6
-        cc = 3
     elif tool == "Eraser":
         w = 1280 * w * w - 4800 * w + 4510
         cc = 2
@@ -257,7 +256,7 @@ def parse_rm_file(file_path, highlight_file_path, dims={"x": RM_WIDTH, "y": RM_H
             # First, see if the highlighter18 is added
             w = 0
             opc = 0
-            cc = 0
+            cc = hl["color"]
             tool, tool_meta, stroke_width, opacity = process_tool_meta(
                 18, dims, w, opc, cc
             )
@@ -270,6 +269,7 @@ def parse_rm_file(file_path, highlight_file_path, dims={"x": RM_WIDTH, "y": RM_H
             # Need to loop through them. But a segment is a rect
             seg_name = "new"+ str(temp_cnt)
             stroke_width = hl["rects"][0]["height"]
+            tool = "{}_{}".format(tool, cc) # quick hack: treat marker colors as different tools
 
             if tool not in l["strokes"].keys():
                 l["strokes"] = update_stroke_dict(l["strokes"], tool, tool_meta)

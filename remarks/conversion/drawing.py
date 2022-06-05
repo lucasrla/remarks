@@ -4,7 +4,7 @@ import fitz  # PyMuPDF
 import shapely.geometry as geom  # Shapely
 
 GRAYSCALE = {0: "black", 1: "grey", 2: "white"}
-COLOR = {0: "blue", 1: "red", 2: "white", 3: "yellow"}
+COLOR = {0: "black", 1: "red", 2: "white", 3: "yellow", 4: "green", 5: "magenta", 6: "blue", 8: "gray"}
 
 
 def draw_svg(data, dims={"x": RM_WIDTH, "y": RM_HEIGHT}, color=True):
@@ -111,6 +111,10 @@ def draw_pdf(data, page, color=True, inplace=False):
                 # TODO: setOpacity and setBorder not working with HighlightAnnot
                 # maybe related to https://github.com/pymupdf/PyMuPDF/issues/421
                 # see also: https://pymupdf.readthedocs.io/en/latest/faq.html#how-to-add-and-modify-annotations
+
+                # now supporting colors
+                color_array = fitz.utils.getColor(c[seg_data["color-code"]])
+                annot.setColors(stroke=color_array)
 
                 annot.setOpacity(seg_data["opacity"])
                 annot.setBorder(width=seg_data["stroke-width"])
