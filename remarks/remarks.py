@@ -39,9 +39,11 @@ def run_remarks(
     output_dir,
     targets=None,
     pdf_name=None,
+    page_offset: int = 0,
     ann_type=None,
     combined_pdf=False,
     modified_pdf=False,
+    atx_headers=False,
     assume_wellformed=False,
     combined_md=False
 ):
@@ -181,7 +183,8 @@ def run_remarks(
                         # TODO: maybe also add highlighted image (pixmap) extraction?
 
                         if combined_md:
-                            combined_md_strs += [(page_idx, md_str + '\n')]
+                            #print(page_offset)
+                            combined_md_strs += [(page_idx+page_offset, md_str + '\n')]
 
                         if "md" in targets:
                             subdir = prepare_subdir(out_path, "md")
@@ -234,9 +237,14 @@ def run_remarks(
 
             if combined_md:
                 combined_md_strs = sorted(combined_md_strs, key=lambda t:t[0])
-                combined_md_str = ''.join([f"\nPage {s[0]}\n--------\n" + s[1]
-                                            for s in combined_md_strs])
-                combined_md_str = f"{name}\n========\n" + combined_md_str
+                if atx_headers:
+                    combined_md_str = ''.join([f"\n## Page {s[0]}\n\n" + s[1]
+                                                for s in combined_md_strs])
+                    combined_md_str = f"# {name}\n" + combined_md_str
+                else:
+                    combined_md_str = ''.join([f"\nPage {s[0]}\n--------\n" + s[1]
+                                                for s in combined_md_strs])
+                    combined_md_str = f"{name}\n========\n" + combined_md_str
                 with open(f"{output_dir}/{name}.md", "w") as f:
                     f.write(combined_md_str)
 

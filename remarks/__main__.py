@@ -26,6 +26,13 @@ def main():
         metavar="FILENAME_STRING",
     )
     parser.add_argument(
+        "--page_offset",
+        help="For md files, offset the page by value (useful for citations). Defaults to 0.",
+        default=0,
+        type=int,
+        metavar="PAGE_OFFSET"
+    )
+    parser.add_argument(
         "--ann_type",
         help="Parse only a specific type of annotation: highlights or scribbles (i.e. everything not highlighted)",
         metavar="ANNOTATION_TYPE",
@@ -42,6 +49,12 @@ def main():
         dest="combined_pdf",
         action="store_true",
         help="Create a '*_remarks.pdf' file with all annotated pages merged into the original (unannotated) PDF",
+    )
+    parser.add_argument(
+        "--atx",
+        dest="atx_headers",
+        action="store_true",
+        help="For Markdown, use Atx headers (# Heading 1; ## Heading 2)",
     )
     parser.add_argument(
         "--modified_pdf",
@@ -73,7 +86,7 @@ def main():
         "-h", "--help", action="help", help="Show this help message",
     )
 
-    parser.set_defaults(combined_pdf=False, modified_pdf=False, assume_wellformed=False, combined_md=False)
+    parser.set_defaults(combined_pdf=False, modified_pdf=False, assume_wellformed=False, combined_md=False, atx_headers=False)
 
     args = parser.parse_args()
     args_dict = vars(args)
