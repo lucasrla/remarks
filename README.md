@@ -29,6 +29,10 @@ Highlight and annotate PDFs with your Marker on your reMarkable tablet:
 
 And then use `remarks` to export annotated pages to `Markdown`, `PDF`, `PNG`, or `SVG` on your computer.
 
+`Markdown`:
+
+- The `--combined_md` flag outputs a single `Markdown` file containing all highlighted text.
+
 `PDF`:
 
 - The `--targets pdf` flag outputs a directory with single-page `PDF` files for each annotated page.
