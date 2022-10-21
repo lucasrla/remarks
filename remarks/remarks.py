@@ -1,6 +1,7 @@
 import logging
 import math
 import pathlib
+import sys
 
 import fitz  # PyMuPDF
 
@@ -40,10 +41,13 @@ from .utils import (
 
 
 def run_remarks(input_dir, output_dir, file_name=None, **kwargs):
-    if sum(1 for _ in pathlib.Path(f"{input_dir}/").glob("*.metadata")) == 0:
+    num_files = sum(1 for _ in pathlib.Path(f"{input_dir}/").glob("*.metadata"))
+
+    if num_files == 0:
         logging.warning(
-            f"No .metadata files found in '{input_dir}/'. Are you sure you're running remarks on a valid xochitl-like directory? See: https://github.com/lucasrla/remarks#1-copy-remarkables-raw-document-files-to-your-computer"
+            f"No .metadata files found in {input_dir}. Are you sure you're running remarks on a valid xochitl-like directory? See: https://github.com/lucasrla/remarks#1-copy-remarkables-raw-document-files-to-your-computer"
         )
+        sys.exit(1)
 
     for metadata_path in pathlib.Path(f"{input_dir}/").glob("*.metadata"):
         if not is_document(metadata_path):
@@ -76,6 +80,10 @@ def run_remarks(input_dir, output_dir, file_name=None, **kwargs):
         # TODO: also, check what happens when sheets are created inside other
         # documents, like PDFs
 
+    logging.info(
+        f"\nDone processing {num_files} documents from {input_dir} to {output_dir}"
+    )
+
 
 # TODO: review args
 def process_document(
@@ -106,19 +114,19 @@ def process_document(
     # print("hl_json_files", hl_json_files)
 
     if ann_type == "scribbles" and not len(ann_rm_files):
-        logging.warning(
+        logging.info(
             "- You asked for scribbles, but we couldn't find any of those on this document"
         )
         return
 
     if ann_type == "highlights" and not len(hl_json_files):
-        logging.warning(
+        logging.info(
             "- You asked for highlights, but we couldn't find anything highlighted on this document"
         )
         return
 
     if ann_type is None and not len(hl_json_files) and not len(ann_rm_files):
-        logging.warning(
+        logging.info(
             "- Found nothing annotated on this document (no scribbles, no highlights)"
         )
         return
@@ -408,12 +416,12 @@ def extract_highlighted_text(
                 ann_page, malformed=assume_malformed_pdfs, md_format=hl_md_format
             )
         else:
-            logging.warning(
+            logging.info(
                 f"- Found highlights on page #{page_idx} but couldn't extract them to Markdown"
             )
 
     if ann_type == "highlights" and not has_highlighter:
-        logging.warning(f"- Couldn't find any highlighted text on page #{page_idx}")
+        logging.info(f"- Couldn't find any highlighted text on page #{page_idx}")
 
     # print("hl_text:", hl_text)
     return hl_text

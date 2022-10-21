@@ -109,7 +109,7 @@ def main():
 
     log_level = args_dict.pop("log_level")
     logging.basicConfig(
-        format="%(levelname)-8s %(message)s",
+        format="%(message)s",
         level=log_level,
     )
 
