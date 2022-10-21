@@ -14,7 +14,7 @@ def read_meta_file(path, suffix=".metadata"):
 
 def is_document(path):
     metadata = read_meta_file(path)
-    return metadata["type"] == 'DocumentType'
+    return metadata["type"] == "DocumentType"
 
 
 def get_document_filetype(path):
@@ -54,10 +54,14 @@ def get_ui_path(path):
     return ui_path
 
 
-def get_pdf_page_dims(path, page_idx=0):
-    with fitz.open(path.with_name(f"{path.stem}.pdf")) as doc:
-        first_page = doc.loadPage(page_idx)
-        return first_page.rect.width, first_page.rect.height
+def get_page_dims(metadata_path, doc_type, page_idx=0):
+    if doc_type in ["pdf", "epub"]:
+        f = metadata_path.with_name(f"{metadata_path.stem}.{doc_type}")
+        with fitz.open(f) as doc:
+            first_page = doc.load_page(page_idx)
+            return first_page.rect.width, first_page.rect.height
+    else:
+        raise ValueError(f"Unknown document type: {doc_type}")
 
 
 def list_pages_uuids(path):
@@ -67,6 +71,27 @@ def list_pages_uuids(path):
 
 def list_ann_rm_files(path):
     content_dir = pathlib.Path(f"{path.parents[0]}/{path.stem}/")
+    # print("content_dir", content_dir, not content_dir.is_dir())
     if not content_dir.is_dir():
         return None
     return list(content_dir.glob("*.rm"))
+
+
+def list_hl_json_files(path):
+    hl_dir = pathlib.Path(f"{path.parents[0]}/{path.stem}.highlights/")
+    # print("hl_dir", hl_dir, not hl_dir.is_dir())
+    if not hl_dir.is_dir():
+        return []
+    return list(hl_dir.glob("*.json"))
+
+
+def load_json_file(path):
+    with open(path) as f:
+        data = json.load(f)
+    return data
+
+
+def prepare_subdir(base_dir, fmt):
+    fmt_dir = pathlib.Path(f"{base_dir}/{fmt}/")
+    fmt_dir.mkdir(parents=True, exist_ok=True)
+    return fmt_dir

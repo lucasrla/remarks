@@ -1,0 +1,8 @@
+{
+  "packages": [
+    "python310"
+  ],
+  "shell": {
+    "init_hook": "PYTHONPATH=.venv/lib/python3.10/site-packages:$PYTHONPATH"
+  }
+}

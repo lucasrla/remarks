@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "remarks"
-version = "0.1.0"
-description = "Extract your marks (highlights, scribbles, annotations) and convert them to markdown, pdf, png, and svg. Works with PDFs annotated on reMarkable™ paper tablets."
-authors = ["Lucas Amaro <lucasrla@users.noreply.github.com>"]
+version = "0.2.0"
+description = "Extract your annotations (highlights, scribbles, ) and convert them to markdown, pdf, png, and svg. Works with documents annotated on reMarkable™ paper tablets."
+authors = ["lucasrla <lucasrla@users.noreply.github.com>"]
 readme = "README.md"
 license = "GPL-3.0-only"
 repository = "https://github.com/lucasrla/remarks"
@@ -16,14 +16,14 @@ classifiers = [
 
 # https://python-poetry.org/docs/dependency-specification/
 [tool.poetry.dependencies]
-python = "^3.8"
-Shapely = "^1.7.1"
-PyMuPDF = "^1.18.4"
+python = "^3.10"
+Shapely = "^1.8.5.post1"
+PyMuPDF = "^1.20.2"
 
 [tool.poetry.dev-dependencies]
-black = "^19.10b0"
-pylint = "^2.5.3"
+black = "^22.10.0"
+flake8 = "^5.0.4"
 
 [build-system]
-requires = ["poetry>=0.12"]
+requires = ["poetry>=1.1.14"]
 build-backend = "poetry.masonry.api"
