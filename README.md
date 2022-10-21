@@ -68,12 +68,12 @@ In order to reconstruct your highlights and annotations, `remarks` relies on spe
 There are several options for getting them to your computer. Find below some suggestions. Choose whatever fits you:
 
 - **Copy from reMarkable's official desktop application**  
-  If you have a [reMarkable's official desktop app](https://support.remarkable.com/hc/en-us/articles/360002665378-Desktop-app) installed, the files we need are already easily available on your computer. For macOS users, the files are located at `~/Library/Application\ Support/remarkable/desktop`. To avoid interfering with reMarkable's official app, copy and paste all the contents of `~/Library/Application\ Support/remarkable/desktop` to another directory (one that you can safely interact with – say, `~/Documents/remarkable/docs`).
+  If you have a [reMarkable's official desktop app](https://support.remarkable.com/s/article/Desktop-app) installed, the files we need are already easily available on your computer. For macOS users, the files are located at `~/Library/Application\ Support/remarkable/desktop`. To avoid interfering with reMarkable's official app, copy and paste all the contents of `~/Library/Application\ Support/remarkable/desktop` to another directory (one that you can safely interact with – say, `~/Documents/remarkable/docs`).
 
-- **Use `rsync` ([i](https://en.wikipedia.org/wiki/Rsync))**  
+- **Use `rsync`** ([i](https://en.wikipedia.org/wiki/Rsync))  
   Check out the repository [@lucasrla/remarkable-utils](https://github.com/lucasrla/remarkable-utils) for the SSH & `rsync` setup I use (which includes automatic backups based on `cron`). 
 
-- **Use `scp` ([i](https://en.wikipedia.org/wiki/Secure_copy_protocol))**  
+- **Use `scp`** ([i](https://en.wikipedia.org/wiki/Secure_copy_protocol))  
   On your reMarkable tablet, go to `Menu > Settings > Help`, then under `About` tap on `Copyrights and licenses`. In `General information`, right after the section titled "GPLv3 Compliance", there will be the username (`root`), password and IP address needed for `SSH`ing into it. Using these credentials, `scp` the contents of `/home/root/.local/share/remarkable/xochitl` from your reMarkable to a directory on your computer. (Copying may take a while depending on the size of your document collection and the quality of your WiFi network.) To prevent any unintented interruptions, you can (optionally) switch off the `Auto sleep` feature in `Menu > Settings > Battery` before transferring your files.
 
 - **Use [@juruen/rmapi](https://github.com/juruen/rmapi) or [@subutux/rmapy](https://github.com/subutux/rmapy)**  

@@ -36,7 +36,9 @@ def run_ocr(tmp_file_name, languages="eng"):
 
     # print(cmd_args)
 
-    p = subprocess.run(cmd_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    p = subprocess.run(
+        cmd_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+    )
     logging.debug(f"{p.stdout}\n")
 
     return tmp_file_name
