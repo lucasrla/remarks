@@ -1,11 +1,13 @@
 __pycache__/
 
-.python-version
-.vscode
+.venv/
+.devbox/
+.vscode/
 
 _/
 TODOs.md
 
-demo/on-computable-numbers/output-from-official-app-for-comparison/
-demo/on-computable-numbers/1936\ On\ Computable Numbers\,\ with\ an\ Application\ to\ the\ Entscheidungsproblem\ -\ A\.\ M\.\ Turing/
-demo/on-computable-numbers/1936\ On\ Computable Numbers\,\ with\ an\ Application\ to\ the\ Entscheidungsproblem\ -\ A\.\ M\.\ Turing\ \_remarks.pdf
+# ignore everything I have put in the `demo/` dir
+demo/
+# except for our public demo
+!demo/on-computable-numbers/xochitl/

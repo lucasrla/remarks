@@ -29,12 +29,12 @@ RM_TOOLS = {
 }
 
 
-def get_adjusted_pdf_dims(pdf_width, pdf_height, scale):
-    if (pdf_width / pdf_height) >= (RM_WIDTH / RM_HEIGHT):
+def get_adjusted_page_dims(page_width, page_height, scale):
+    if (page_width / page_height) >= (RM_WIDTH / RM_HEIGHT):
         adj_w = RM_WIDTH * scale  # "perfect" fitting, no gap
-        adj_h = pdf_height
+        adj_h = page_height
     else:
-        adj_w = pdf_width
+        adj_w = page_width
         adj_h = RM_HEIGHT * scale  # "perfect" fitting, no gap
 
     return adj_w, adj_h
@@ -44,21 +44,21 @@ def get_rescaled_device_dims(scale):
     return RM_WIDTH * scale, RM_HEIGHT * scale
 
 
-def get_pdf_to_device_ratio(pdf_width, pdf_height):
-    pdf_aspect_ratio = pdf_width / pdf_height
+def get_page_to_device_ratio(doc_width, doc_height):
+    doc_aspect_ratio = doc_width / doc_height
     device_aspect_ratio = RM_WIDTH / RM_HEIGHT
 
-    # If PDF page is wider than reMarkable's aspect ratio,
-    # use pdf_width as reference for the scale ratio.
+    # If doc page is wider than reMarkable's aspect ratio,
+    # use doc_width as reference for the scale ratio.
     # There should be no "leftover" (gap) on the horizontal
-    if pdf_aspect_ratio >= device_aspect_ratio:
-        scale = pdf_width / RM_WIDTH
+    if doc_aspect_ratio >= device_aspect_ratio:
+        scale = doc_width / RM_WIDTH
 
     # PDF page is narrower than reMarkable's a/r,
     # use pdf_height as reference for the scale ratio.
     # There should be no "leftover" (gap) on the vertical
     else:
-        scale = pdf_height / RM_HEIGHT
+        scale = doc_height / RM_HEIGHT
 
     return scale
 
@@ -139,28 +139,10 @@ def update_seg_dict(sg, name, opacity, stroke_width):
     return sg
 
 
-def split_ann_types(output):
-    highlights = {}
-    highlights["layers"] = []
-
-    scribbles = {}
-    scribbles["layers"] = []
-
-    for layer in output["layers"]:
-        for st_name, st_value in layer["strokes"].items():
-            strokes = {"strokes": {st_name: st_value}}
-
-            if "Highlighter" in st_name:
-                highlights["layers"].append(strokes)
-            else:
-                scribbles["layers"].append(strokes)
-
-    return highlights, scribbles
-
-
 def parse_rm_file(file_path, dims={"x": RM_WIDTH, "y": RM_HEIGHT}):
     with open(file_path, "rb") as f:
         data = f.read()
+    # print("data:", data)
 
     expected_header_v3 = b"reMarkable .lines file, version=3          "
     expected_header_v5 = b"reMarkable .lines file, version=5          "
@@ -171,6 +153,8 @@ def parse_rm_file(file_path, dims={"x": RM_WIDTH, "y": RM_HEIGHT}):
     fmt = f"<{len(expected_header_v5)}sI"
 
     header, nlayers = struct.unpack_from(fmt, data, offset)
+    # print("header, nlayers", header, nlayers)
+
     offset += struct.calcsize(fmt)
 
     is_v3 = header == expected_header_v3
@@ -183,6 +167,8 @@ def parse_rm_file(file_path, dims={"x": RM_WIDTH, "y": RM_HEIGHT}):
 
     output = {}
     output["layers"] = []
+
+    has_highlighter = False
 
     for _ in range(nlayers):
         fmt = "<I"
@@ -208,6 +194,10 @@ def parse_rm_file(file_path, dims={"x": RM_WIDTH, "y": RM_HEIGHT}):
             tool, tool_meta, stroke_width, opacity = process_tool_meta(
                 pen, dims, w, opc, cc
             )
+            # print(f"tool={tool}, tool_meta={tool_meta}, stroke_width={stroke_width}, opacity={opacity}")
+
+            if "Highlighter" in tool:
+                has_highlighter = True
 
             seg_name = "default"
 
@@ -232,11 +222,7 @@ def parse_rm_file(file_path, dims={"x": RM_WIDTH, "y": RM_HEIGHT}):
 
         output["layers"].append(l)
 
-    # Quick and dirty workaround to split highlights and scribbles
-    # TODO: refactor!
-    highlights, scribbles = split_ann_types(output)
-
-    return highlights, scribbles
+    return output, has_highlighter
 
 
 # TODO: make the rescale part of the parsing (or perhaps drawing?) process
