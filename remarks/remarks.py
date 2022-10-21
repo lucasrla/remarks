@@ -89,6 +89,7 @@ def process_document(
     combined_md=False,
     assume_malformed_pdfs=False,
     hl_md_format="whole_block",
+    avoid_ocr=False,
 ):
     pages = list_pages_uuids(metadata_path)
     # print("- Number of pages:", len(pages))
@@ -182,6 +183,7 @@ def process_document(
             scale,
             pdf_src,
             assume_malformed_pdfs,
+            avoid_ocr,
         )
 
         ann_page = draw_annotations(ann_data, ann_page)
@@ -295,6 +297,7 @@ def prepare_annotations(
     scale,
     pdf_src,
     assume_malformed_pdfs,
+    avoid_ocr,
 ):
     ann_data = None
 
@@ -340,7 +343,12 @@ def prepare_annotations(
                 pdf_src[idx], malformed=assume_malformed_pdfs
             )
 
-        if not is_extractable and pdf_src is not None and is_tool("ocrmypdf"):
+        if (
+            not is_extractable
+            and pdf_src is not None
+            and is_tool("ocrmypdf")
+            and not avoid_ocr
+        ):
             logging.warning("- Will run OCRmyPDF on it. Hold on!\n")
 
             tmp_fname = "_tmp.pdf"
