@@ -188,9 +188,18 @@ def process_document(
 
         ann_page = draw_annotations(ann_data, ann_page)
 
+        # If there's a hl_file, then there are reMarkable's "smart" highlights,
+        # add them as annotations to page and tag it as is_extractable
         if hl_file is not None:
             hl_data = load_json_file(hl_file)
             ann_page = add_smart_highlight_annotations(hl_data, ann_page)
+            is_extractable = True
+
+        # TODO: either improve add_smart_highlight_annotations() and extract_highlighted_text() for smart highlights
+        # or use extract_text_from_smart_highlights() instead!
+        #
+        # the latter currently is more reliable than the present method of
+        # running smart highlights through extract_highlighted_text()
 
         hl_text = extract_highlighted_text(
             ann_page,
@@ -323,10 +332,9 @@ def prepare_annotations(
     # Most likely, they're highlights on scanned / image-based PDF,
     # so in order to extract any text from it, we need to run it through an OCR
     if (ann_type == "highlights" or ann_type is None) and has_highlighter:
-        if pdf_src is not None:
-            is_extractable = is_text_extractable(
-                pdf_src[idx], malformed=assume_malformed_pdfs
-            )
+        is_extractable = is_text_extractable(
+            pdf_src[idx], malformed=assume_malformed_pdfs
+        )
 
         if (
             not is_extractable
@@ -334,7 +342,7 @@ def prepare_annotations(
             and is_tool("ocrmypdf")
             and not avoid_ocr
         ):
-            logging.warning("- Will run OCRmyPDF on it. Hold on!\n")
+            logging.warning("- Will run OCRmyPDF on this document. Hold on!")
 
             tmp_fname = "_tmp.pdf"
             ann_doc.save(tmp_fname)
@@ -387,7 +395,7 @@ def extract_highlighted_text(
 
     # TODO: add ability to extract highlighted images / tables (via pixmaps)?
 
-    if (ann_type == "highlights" or ann_type is None) and has_highlighter:
+    if ann_type == "highlights" or ann_type is None:
         if is_extractable or is_ocred:
             hl_text = create_md_from_word_blocks(
                 ann_page, malformed=assume_malformed_pdfs, md_format=hl_md_format
@@ -397,7 +405,7 @@ def extract_highlighted_text(
                 f"- Found highlights on page #{page_idx} but couldn't extract them to Markdown"
             )
 
-    if ann_type == "highlights" and not has_highlighter:
+    if ann_type == "highlights" and not has_highlighter and not is_extractable:
         logging.info(f"- Couldn't find any highlighted text on page #{page_idx}")
 
     # print("hl_text:", hl_text)
