@@ -1,3 +1,4 @@
+import logging
 import pathlib
 import argparse
 
@@ -5,8 +6,6 @@ from remarks import run_remarks
 
 __prog_name__ = "remarks"
 __version__ = "0.2.0"
-
-# TODO: add a proper verbose mode (which is off by default) via logging...
 
 
 def main():
@@ -77,6 +76,12 @@ def main():
         version="%(prog)s {version}".format(version=__version__),
     )
     parser.add_argument(
+        "--log_level",
+        help="Print out log messages with equal or higher severity level as specified by LOG_LEVEL. Currently supported: DEBUG < INFO < WARNING < ERROR. Choose DEBUG to print out all messages, ERROR to print out just error messages, etc. If a log level is not set, it defaults to INFO",
+        default="INFO",
+        metavar="LOG_LEVEL",
+    )
+    parser.add_argument(
         "-h",
         "--help",
         action="help",
@@ -95,6 +100,12 @@ def main():
 
     input_dir = args_dict.pop("input_dir")
     output_dir = args_dict.pop("output_dir")
+
+    log_level = args_dict.pop("log_level")
+    logging.basicConfig(
+        format="%(levelname)-8s %(message)s",
+        level=log_level,
+    )
 
     if not pathlib.Path(input_dir).exists():
         parser.error(f'Directory "{input_dir}" does not exist')

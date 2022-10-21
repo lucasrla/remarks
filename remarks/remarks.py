@@ -1,3 +1,4 @@
+import logging
 import math
 import pathlib
 
@@ -42,8 +43,8 @@ def run_remarks(input_dir, output_dir, file_name=None, **kwargs):
     metadata_paths = pathlib.Path(f"{input_dir}/").glob("*.metadata")
 
     if sum(1 for _ in metadata_paths) == 0:
-        print(
-            f"ERROR: No .metadata files found in '{input_dir}/'. Are you sure you're running remarks on a valid xochitl-like directory? See: https://github.com/lucasrla/remarks#1-copy-remarkables-raw-document-files-to-your-computer"
+        logging.warning(
+            f"No .metadata files found in '{input_dir}/'. Are you sure you're running remarks on a valid xochitl-like directory? See: https://github.com/lucasrla/remarks#1-copy-remarkables-raw-document-files-to-your-computer"
         )
 
     for metadata_path in metadata_paths:
@@ -59,7 +60,7 @@ def run_remarks(input_dir, output_dir, file_name=None, **kwargs):
             continue
 
         if doc_type in supported_types:
-            print(f'\nFile: "{doc_name}.{doc_type}" ({metadata_path.stem})')
+            logging.info(f'\nFile: "{doc_name}.{doc_type}" ({metadata_path.stem})')
 
             in_device_dir = get_ui_path(metadata_path)
             out_path = pathlib.Path(f"{output_dir}/{in_device_dir}/{doc_name}/")
@@ -68,7 +69,7 @@ def run_remarks(input_dir, output_dir, file_name=None, **kwargs):
 
             process_document(metadata_path, out_path, doc_type, **kwargs)
         else:
-            print(
+            logging.info(
                 f'\nFile skipped: "{doc_name}" ({metadata_path.stem}) due to unsupported filetype: {doc_type}. remarks only supports: {", ".join(supported_types)}'
             )
 
@@ -106,25 +107,25 @@ def process_document(
     # print("hl_json_files", hl_json_files)
 
     if ann_type == "scribbles" and not len(ann_rm_files):
-        print(
+        logging.warning(
             "- You asked for scribbles, but we couldn't find any of those on this document"
         )
         return
 
     if ann_type == "highlights" and not len(hl_json_files):
-        print(
+        logging.warning(
             "- You asked for highlights, but we couldn't find anything highlighted on this document"
         )
         return
 
     if ann_type is None and not len(hl_json_files) and not len(ann_rm_files):
-        print(
+        logging.warning(
             "- Found nothing annotated on this document (no scribbles, no highlights)"
         )
         return
 
     if doc_type == "epub":
-        print(
+        logging.info(
             "- This is an EPUB file! Please beware that, right now, all we can do with it is _basic_ extraction of highlighted text to Markdown. There is no support for redrawing scribbles and highlights. If you need annotations redrawn with remarks, convert EPUBs to PDFs _before_ annotating them with your reMarkable device"
         )
 
@@ -342,7 +343,7 @@ def prepare_annotations(
             )
 
         if not is_extractable and pdf_src is not None and is_tool("ocrmypdf"):
-            print("- Will run OCRmyPDF on it. Hold on!\n")
+            logging.warning("- Will run OCRmyPDF on it. Hold on!\n")
 
             tmp_fname = "_tmp.pdf"
             ann_doc.save(tmp_fname)
@@ -367,7 +368,7 @@ def prepare_annotations(
             is_ocred = True
 
     if ann_type == "scribbles" and has_highlighter:
-        print(
+        logging.info(
             "- Found highlighted text on page #{idx} but `--ann_type` flag was set to `scribbles` only, so we won't bother with it"
         )
 
@@ -401,12 +402,12 @@ def extract_highlighted_text(
                 ann_page, malformed=assume_malformed_pdfs, md_format=hl_md_format
             )
         else:
-            print(
+            logging.warning(
                 f"- Found highlights on page #{page_idx} but couldn't extract them to Markdown"
             )
 
     if ann_type == "highlights" and not has_highlighter:
-        print(f"- Couldn't find any highlighted text on page #{page_idx}")
+        logging.warning(f"- Couldn't find any highlighted text on page #{page_idx}")
 
     # print("hl_text:", hl_text)
     return hl_text
