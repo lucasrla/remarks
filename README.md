@@ -1,10 +1,14 @@
 # remarks
 
-Extract your marks (highlights, scribbles, annotations) and convert them to `Markdown`, `PDF`, `PNG`, and `SVG`. 
+Extract annotations (text highlights and scribbles) and convert them to `Markdown`, `PDF`, `PNG`, and `SVG`. 
 
-`remarks` works with PDFs annotated on [reMarkable™ paper tablets](https://remarkable.com), both 1st and 2nd generation.
+`remarks` works with documents annotated on [reMarkable™ paper tablets](https://remarkable.com) &mdash; both 1st and 2nd generation &mdash; up to software version `2.15.0.1067`.
 
-Please note that `remarks` is still highly experimental software. In any case, pull requests are warmly welcome!
+Note that `remarks` not only is highly experimental, it is _very likely to break_ after you update the software of your tablet. I might find some spare time to continue to maintain it, but I make no promises.
+
+`remarks` code is fairly straightforward but not elegant at all. It has been put together in a couple of hours. You are free to fork and run with it though ;)
+
+Most of the actual heavy lifting has been done by the open source community and PyMuPDF. See [Credits and Acknowledgements](#credits-and-acknowledgements).
 
 
 # Some use cases
@@ -27,23 +31,9 @@ Highlight and annotate PDFs with your Marker on your reMarkable tablet:
 
 <img width="300" alt="IMG_0642-low.jpg" src="https://user-images.githubusercontent.com/1920195/88480247-3d776680-cf2b-11ea-9c30-061ec0e5cc60.jpg">
 
-And then use `remarks` to export annotated pages to `Markdown`, `PDF`, `PNG`, or `SVG` on your computer.
+And then use `remarks` to export annotated pages to `Markdown`, `PDF`, `PNG`, or `SVG` on your computer:
 
-`Markdown`:
-
-- The `--combined_md` flag outputs a single `Markdown` file containing all highlighted text.
-
-`PDF`:
-
-- The `--targets pdf` flag outputs a directory with single-page `PDF` files for each annotated page.
-- The `--combined_pdf` flag outputs an all-in-one `PDF` file (the original `PDF` with all annotated pages).
-- The `--modified_pdf` flag outputs an `PDF` file with just the annotated pages.
-
-`PNG`:
-
-> <img width="300" alt="demo-remarks-png.png" src="https://user-images.githubusercontent.com/1920195/88480249-410aed80-cf2b-11ea-919b-22fb550ed9d7.png">
-
-`Markdown`:
+<img width="300" alt="demo-remarks-png.png" src="https://user-images.githubusercontent.com/1920195/88480249-410aed80-cf2b-11ea-919b-22fb550ed9d7.png">
 
 > <mark>WHAT IS LIFE?</mark>
 > 
@@ -52,76 +42,73 @@ And then use `remarks` to export annotated pages to `Markdown`, `PDF`, `PNG`, or
 > <mark>To</mark>
 > <mark>the memory of My</mark> <mark>Parents</mark>
 
-`SVG`:
-
-- Please note that the `SVG` image file includes only the annotations, not the original PDF content.
-
 
 # Compatibility and dependencies
 
-Because `remarks` depends only on [PyMuPDF](https://github.com/pymupdf/PyMuPDF) and [Shapely](https://github.com/Toblerity/Shapely), there is no need to install `imagemagick`, `opencv`, or any additional image library. Both PyMuPDF and Shapely have pre-built wheels [[1](https://pypi.org/project/PyMuPDF/1.18.4/#files), [2](https://pypi.org/project/Shapely/1.7.1/#files)] for several platforms (macOS, Linux, Windows) and recent Python versions, so their installation should be easy and smooth for most setups.
+Because `remarks` depends only on [PyMuPDF](https://github.com/pymupdf/PyMuPDF) and [Shapely](https://github.com/shapely/shapely), there is no need to install `imagemagick`, `opencv`, or any additional image library. Both PyMuPDF and Shapely have [pre-built](https://pypi.org/project/PyMuPDF/#files) [wheels](https://pypi.org/project/Shapely/#files) for several platforms (macOS, Linux, Windows) and recent Python 3 versions, so installing them should be smooth and easy for most people.
 
-I use `remarks` with a [reMarkable 1](https://remarkable.com/store/remarkable) tablet running software version `2.6.2.75` on macOS Catalina (`10.15.x`) with CPython `3.8.x`. I don't have other devices to test it thoroughly, but I expect `remarks` to work just fine in all common setups, including with [remarkable 2](https://remarkable.com/store/remarkable-2/).
+I currently use `remarks` with [reMarkable 1](https://remarkable.com/store/remarkable) and [reMarkable 2](https://remarkable.com/store/remarkable-2) tablets running software versions `2.14.3.1047` and `2.15.0.1067` on macOS Monterey (`12.6`) with CPython `3.10.x`. I don't have other equipment to test it thoroughly, but I expect `remarks` to work just fine in all common setups.
 
-Incidentally, please help me keep track of `remarks` compatibility across different setups:
+Incidentally, help the community keeping track of `remarks` compatibility across different setups:
 
 - If it is working well for you, [make a quick comment with your setup](https://github.com/lucasrla/remarks/discussions/8)
 - If you run into any problems, [raise an issue](https://github.com/lucasrla/remarks/issues/new/choose)
 
-If [OCRmyPDF](https://github.com/jbarlow83/OCRmyPDF) is available on your computer, `remarks` may (optionally) use it to OCR PDFs before extracting their highlighted text.
+If [OCRmyPDF](https://github.com/ocrmypdf/OCRmyPDF) is available on your computer, `remarks` may (optionally) use it to OCR PDFs before extracting their highlighted text.
+
 
 # Setup
 
 To get `remarks` up and running on your local machine, follow the instructions below:
 
-## 1. Copy reMarkable's files to your computer
+## 1. Copy reMarkable's "raw" document files to your computer
 
 In order to reconstruct your highlights and annotations, `remarks` relies on specific files that are created by the reMarkable device as you use it. Because these specific files are internal to the reMarkable device, first we need to transfer them to your computer.
 
-There are, broadly speaking, four options for getting them to your computer. Choose the one that fits you the best:
+There are several options for getting them to your computer. Find below some suggestions. Choose whatever fits you:
 
 - **Copy from reMarkable's official desktop application**  
-  If you have a [reMarkable's official desktop app](https://support.remarkable.com/hc/en-us/articles/360002665378-Desktop-app) installed, the files we need are already easily available on your computer. For macOS users, the files are located at `~/Library/Application\ Support/remarkable/desktop`. To avoid interfering with reMarkable's official app, copy and paste all the contents of `~/Library/Application\ Support/remarkable/desktop` to another directory (one that you can safely interact with, say, `~/Documents/remarkable/docs`).
+  If you have a [reMarkable's official desktop app](https://support.remarkable.com/hc/en-us/articles/360002665378-Desktop-app) installed, the files we need are already easily available on your computer. For macOS users, the files are located at `~/Library/Application\ Support/remarkable/desktop`. To avoid interfering with reMarkable's official app, copy and paste all the contents of `~/Library/Application\ Support/remarkable/desktop` to another directory (one that you can safely interact with – say, `~/Documents/remarkable/docs`).
 
-- **Use `rsync` ([about](https://en.wikipedia.org/wiki/Rsync))**  
+- **Use `rsync` ([i](https://en.wikipedia.org/wiki/Rsync))**  
   Check out the repository [@lucasrla/remarkable-utils](https://github.com/lucasrla/remarkable-utils) for the SSH & `rsync` setup I use (which includes automatic backups based on `cron`). 
 
-- **Use `scp` ([about](https://en.wikipedia.org/wiki/Secure_copy_protocol))**  
-  On your reMarkable tablet, go to `Menu > Settings > Help > About`, then tap on `Copyrights and licenses`. In `General information`, right after the section titled "GPLv3 Compliance", there will be the username (`root`), password and IP addresses needed for `SSH`. Using these credentials, `scp` the contents of `/home/root/.local/share/remarkable/xochitl` from your reMarkable to a directory on your computer. (Copying may take a while depending on the size of your document collection and the quality of your WiFi network.) To prevent any unintented interruptions, you can (optionally) switch off the `Auto sleep` feature in `Menu > Settings > Battery` before transferring your files.
+- **Use `scp` ([i](https://en.wikipedia.org/wiki/Secure_copy_protocol))**  
+  On your reMarkable tablet, go to `Menu > Settings > Help`, then under `About` tap on `Copyrights and licenses`. In `General information`, right after the section titled "GPLv3 Compliance", there will be the username (`root`), password and IP address needed for `SSH`ing into it. Using these credentials, `scp` the contents of `/home/root/.local/share/remarkable/xochitl` from your reMarkable to a directory on your computer. (Copying may take a while depending on the size of your document collection and the quality of your WiFi network.) To prevent any unintented interruptions, you can (optionally) switch off the `Auto sleep` feature in `Menu > Settings > Battery` before transferring your files.
 
 - **Use [@juruen/rmapi](https://github.com/juruen/rmapi) or [@subutux/rmapy](https://github.com/subutux/rmapy)**  
   Both are free and open source software that allow you to access your reMarkable tablet files through reMarkable's cloud service.
 
 ## 2. Clone this repository and install the dependencies
 
-> **⚠️ Users on macOS Big Sur:**  
-> - If you use `pip`, upgrade it to `>=20.3` via `pip install --upgrade pip`. [[#988](https://github.com/pypa/pip/issues/988#issuecomment-735451004)]
-> - If you use `poetry`, it seems a fix is still pending. Follow [[#3458](https://github.com/python-poetry/poetry/issues/3458)] for updates
-> - For more information on the impact of this issue to installing `remarks`, see [[#7](https://github.com/lucasrla/remarks/issues/7)]
+> **⚠️ Users on Apple Silicon Macs (M1, M1 Pro, M2, etc):**  
+> - You must install `swig` and `freetype` via `brew` before running `poetry install` (see below)
 
 ```sh
 ### 2.1 Clone
 git clone https://github.com/lucasrla/remarks.git && cd remarks
 
 
-### 2.2 Create a virtual environment
+### 2.2 Create and activate a virtual environment
 
-# I like pyenv [https://github.com/pyenv/pyenv] 
-# and pyenv-virtualenv [https://github.com/pyenv/pyenv-virtualenv]:
-pyenv virtualenv remarks && pyenv local remarks
-
-# But of course you are free to use any of the many alternatives
-# e.g. virtualenv, virtualenvwrapper
+# If you're using poetry, a new virtual env should be created automatically (given our `poetry.toml`)
+# Any other popular alternative (e.g. virtualenv, virtualenvwrapper, etc) should work too
 
 
 ### 2.3 Install the dependencies
 
-# Personally, I prefer using poetry [http://python-poetry.org] for managing dependencies:
-poetry install
+# If you're on an Apple Silicon computer, you must run:
+# brew install swig freetype
+#
+# This is necessary because (as of October 2022) PyMuPDF does not provide pre-built macOS arm64 wheels
+# h/t: https://github.com/pymupdf/PyMuPDF/discussions/875#discussioncomment-3423026
+#
+# In case you don't have `brew` available, install it first: https://brew.sh/
 
-# But pip works fine as well:
-pip install -r requirements.txt
+# Install dependencies with:
+poetry install
 ```
+
 
 # Usage and Demo
 
@@ -140,7 +127,7 @@ Next, for a quick hands-on experience of `remarks`, run the demo:
 # "On Computable Numbers, with an Application to the Entscheidungsproblem"
 # https://londmathsoc.onlinelibrary.wiley.com/doi/abs/10.1112/plms/s2-42.1.230
 
-python -m remarks demo/on-computable-numbers/xochitl demo/on-computable-numbers --targets png md pdf --combined_pdf
+python -m remarks demo/on-computable-numbers/xochitl remarks-example/ --per_page_targets png md pdf --modified_pdf
 ```
 
 A few other examples:
@@ -148,9 +135,9 @@ A few other examples:
 ```sh
 # Assuming your `xochitl` files are at `~/backups/remarkable/xochitl/`
 
-python -m remarks ~/backups/remarkable/xochitl/ example_1/ --ann_type highlights --targets md --combined_pdf
+python -m remarks ~/backups/remarkable/xochitl/ example_1/ --ann_type highlights --per_page_targets md
 
-python -m remarks ~/backups/remarkable/xochitl/ example_2/ --targets png
+python -m remarks ~/backups/remarkable/xochitl/ example_2/ --per_page_targets png
 ```
 
 

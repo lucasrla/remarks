@@ -4,7 +4,7 @@ import fitz  # PyMuPDF
 import shapely.geometry as geom  # Shapely
 
 GRAYSCALE = {0: "black", 1: "grey", 2: "white"}
-COLOR = {0: "blue", 1: "red", 2: "white", 3: "yellow"}
+COLOR = {0: "blue", 1: "red", 2: "white", 3: "yellow", 6: "blue", 7: "red"}
 
 
 def draw_svg(data, dims={"x": RM_WIDTH, "y": RM_HEIGHT}, color=True):
@@ -90,7 +90,7 @@ def prepare_segments(data):
     return segs
 
 
-def draw_pdf(data, page, color=True, inplace=False):
+def draw_annotations(data, page, color=True, inplace=False):
     c = COLOR if color else GRAYSCALE
 
     segments = prepare_segments(data)
@@ -98,30 +98,51 @@ def draw_pdf(data, page, color=True, inplace=False):
     for seg_name, seg_data in segments.items():
         seg_type = seg_name.split("_")[0]
 
-        # Highlights
+        # Highlights that were not recognized by reMarkable's own software,
+        # these ones are "old style" and we must handle them ourselves
+
+        # By "old style" I mean before Software releases 2.7 and 2.11
+        # - https://support.remarkable.com/s/article/Software-release-2-7
+        # - https://support.remarkable.com/s/article/Software-release-2-11
         if seg_type == "Highlighter":
+            # print("seg_data:", seg_data)
+
             for seg_rect in seg_data["rects"]:
-                annot = page.addHighlightAnnot(seg_rect)
+                # print("seg_rect:", seg_rect)
 
-                # TODO: setOpacity and setBorder not working with HighlightAnnot
-                # maybe related to https://github.com/pymupdf/PyMuPDF/issues/421
-                # see also: https://pymupdf.readthedocs.io/en/latest/faq.html#how-to-add-and-modify-annotations
+                # https://pymupdf.readthedocs.io/en/latest/recipes-annotations.html#how-to-add-and-modify-annotations
+                # annot = page.add_highlight_annot(seg_rect)
+                page.add_highlight_annot(seg_rect)
+                # annot.update()
 
-                annot.setOpacity(seg_data["opacity"])
-                annot.setBorder(width=seg_data["stroke-width"])
-                annot.update()
+                # print("annot.rect:", annot.rect)
+                # print("annot.border:", annot.border)
+                # print("annot.opacity:", annot.opacity)
+                # print("annot.colors:", annot.colors)
 
         # Scribbles
         else:
             for seg_points in seg_data["points"]:
                 color_array = fitz.utils.getColor(c[seg_data["color-code"]])
 
-                # Inspired by https://github.com/pymupdf/PyMuPDF/blob/master/docs/faq.rst#how-to-use-ink-annotations
-                annot = page.addInkAnnot([seg_points])
-                annot.setBorder(width=seg_data["stroke-width"])
-                annot.setOpacity(seg_data["opacity"])
-                annot.setColors(stroke=color_array)
+                # Inspired by https://pymupdf.readthedocs.io/en/latest/recipes-annotations.html#how-to-use-ink-annotations
+                annot = page.add_ink_annot([seg_points])
+                annot.set_border(width=seg_data["stroke-width"])
+                annot.set_opacity(seg_data["opacity"])
+                annot.set_colors(stroke=color_array)
                 annot.update()
 
     if not inplace:
         return page
+
+
+# Highlights from reMarkable's own "smart" highlighting (introduced in 2.7)
+def add_smart_highlight_annotations(hl_data, page):
+    hl_list = hl_data["highlights"][0]
+
+    for hl in hl_list:
+        # https://pymupdf.readthedocs.io/en/latest/page.html#Page.add_highlight_annot
+        quads = page.search_for(hl["text"], quads=True)
+        page.add_highlight_annot(quads)
+
+    return page
