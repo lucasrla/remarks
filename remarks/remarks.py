@@ -16,7 +16,6 @@ from .conversion.parsing import (
 from .conversion.text import (
     create_md_from_word_blocks,
     is_text_extractable,
-    extract_text_from_smart_highlights,
 )
 from .conversion.ocrmypdf import (
     is_tool,
@@ -41,9 +40,9 @@ from .utils import (
 
 
 def run_remarks(input_dir, output_dir, file_name=None, **kwargs):
-    num_files = sum(1 for _ in pathlib.Path(f"{input_dir}/").glob("*.metadata"))
+    num_docs = sum(1 for _ in pathlib.Path(f"{input_dir}/").glob("*.metadata"))
 
-    if num_files == 0:
+    if num_docs == 0:
         logging.warning(
             f"No .metadata files found in {input_dir}. Are you sure you're running remarks on a valid xochitl-like directory? See: https://github.com/lucasrla/remarks#1-copy-remarkables-raw-document-files-to-your-computer"
         )
@@ -81,7 +80,7 @@ def run_remarks(input_dir, output_dir, file_name=None, **kwargs):
         # documents, like PDFs
 
     logging.info(
-        f"\nDone processing {num_files} documents from {input_dir} to {output_dir}"
+        f"\nDone processing {num_docs} documents from {input_dir} to {output_dir}"
     )
 
 
@@ -131,11 +130,6 @@ def process_document(
         )
         return
 
-    if doc_type == "epub":
-        logging.info(
-            "- This is an EPUB file! Please beware that, right now, all we can do with it is _basic_ extraction of highlighted text to Markdown. There is no support for redrawing scribbles and highlights. If you need annotations redrawn with remarks, convert EPUBs to PDFs _before_ annotating them with your reMarkable device"
-        )
-
     if combined_md:
         combined_md_strs = []
 
@@ -167,10 +161,8 @@ def process_document(
         scale = get_page_to_device_ratio(page_w, page_h)
         # print("page_w, page_h, scale", page_w, page_h, scale)
 
-        pdf_src = None
-        if doc_type == "pdf":
-            f = metadata_path.with_name(f"{metadata_path.stem}.pdf")
-            pdf_src = fitz.open(f)
+        f = metadata_path.with_name(f"{metadata_path.stem}.pdf")
+        pdf_src = fitz.open(f)
 
         ann_doc = fitz.open()
 
@@ -211,19 +203,12 @@ def process_document(
             hl_md_format,
         )
 
-        # A workaround for extracting highlight text without relying on our
-        # PDF-based code methods
-        # Note that this won't output a Markdown file with <mark> tags that
-        # contextualizes our highlights
-        if hl_file is not None and doc_type == "epub":
-            hl_text = extract_text_from_smart_highlights(hl_data, hl_md_format)
-
         if per_page_targets:
-            if "pdf" in per_page_targets and doc_type == "pdf":
+            if "pdf" in per_page_targets:
                 subdir = prepare_subdir(out_path, "pdf")
                 ann_doc.save(f"{subdir}/{page_idx:0{pages_magnitude}}.pdf")
 
-            if "png" in per_page_targets and doc_type == "pdf":
+            if "png" in per_page_targets:
                 # (2, 2) is a short-hand for 2x zoom on (x, y)
                 # https://pymupdf.readthedocs.io/en/latest/page.html#Page.get_pixmap
                 ann_pixmap = ann_page.get_pixmap(matrix=fitz.Matrix(2, 2))
@@ -231,7 +216,7 @@ def process_document(
                 subdir = prepare_subdir(out_path, "png")
                 ann_pixmap.save(f"{subdir}/{page_idx:0{pages_magnitude}}.png")
 
-            if "svg" in per_page_targets and doc_type == "pdf":
+            if "svg" in per_page_targets:
                 # (2, 2) is a short-hand for 2x zoom on (x, y)
                 # https://pymupdf.readthedocs.io/en/latest/page.html#Page.get_svg_image
                 ann_svg_str = ann_page.get_svg_image(
@@ -247,14 +232,14 @@ def process_document(
                 with open(f"{subdir}/{page_idx:0{pages_magnitude}}.md", "w") as f:
                     f.write(hl_text)
 
-        if modified_pdf and doc_type == "pdf":
+        if modified_pdf:
             mod_pdf.insert_pdf(ann_doc, start_at=-1)
             pages_order.append(page_idx)
 
         if combined_md:
             combined_md_strs += [(page_idx, hl_text + "\n")]
 
-        if combined_pdf and doc_type == "pdf":
+        if combined_pdf:
             # If there are annotations outside the original page limits
             # or if the PDF has been OCRed by us, insert the annotated page
             # that we have reconstructed from scratch
@@ -272,10 +257,10 @@ def process_document(
     out_doc_path_str = f"{out_path.parent}/{out_path.stem}"
     # print("out_doc_path_str:", out_doc_path_str)
 
-    if combined_pdf and doc_type == "pdf":
+    if combined_pdf:
         pdf_src.save(f"{out_doc_path_str} _remarks.pdf")
 
-    if modified_pdf and doc_type == "pdf":
+    if modified_pdf:
         pages_order = sorted(range(len(pages_order)), key=pages_order.__getitem__)
         mod_pdf.select(pages_order)
         mod_pdf.save(f"{out_doc_path_str} _remarks-only.pdf")
@@ -291,8 +276,7 @@ def process_document(
         with open(f"{out_doc_path_str} _highlights.md", "w") as f:
             f.write(combined_md_str)
 
-    if pdf_src is not None:
-        pdf_src.close()
+    pdf_src.close()
 
 
 def prepare_annotations(
@@ -315,14 +299,7 @@ def prepare_annotations(
     page_w_adj, page_h_adj = get_adjusted_page_dims(page_w, page_h, scale)
     page_rect = fitz.Rect(0, 0, page_w_adj, page_h_adj)
 
-    if pdf_src is not None:
-        ann_page.show_pdf_page(page_rect, pdf_src, pno=idx)
-
-    # TODO: someday we might dabble at reconstructing annotations on EPUB
-    # and notebook files... That probably would involve converting them to PDF
-    # https://pymupdf.readthedocs.io/en/latest/document.html#Document.convert_to_pdf
-    else:
-        pass
+    ann_page.show_pdf_page(page_rect, pdf_src, pno=idx)
 
     has_highlighter = False
     is_extractable = False
