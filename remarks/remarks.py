@@ -39,7 +39,14 @@ from .utils import (
 
 
 def run_remarks(input_dir, output_dir, file_name=None, **kwargs):
-    for metadata_path in pathlib.Path(f"{input_dir}/").glob("*.metadata"):
+    metadata_paths = pathlib.Path(f"{input_dir}/").glob("*.metadata")
+
+    if sum(1 for _ in metadata_paths) == 0:
+        print(
+            f"ERROR: No .metadata files found in '{input_dir}/'. Are you sure you're running remarks on a valid xochitl-like directory? See: https://github.com/lucasrla/remarks#1-copy-remarkables-raw-document-files-to-your-computer"
+        )
+
+    for metadata_path in metadata_paths:
         if not is_document(metadata_path):
             continue
 
