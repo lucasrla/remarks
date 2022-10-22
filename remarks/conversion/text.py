@@ -101,7 +101,7 @@ def get_page_text_tuples(
         return tuples_list
 
 
-def create_md_from_word_blocks(page, malformed=False, md_format="whole_block"):
+def extract_text_from_pdf_annotations(page, malformed=False, md_format="whole_block"):
     # https://pymupdf.readthedocs.io/en/latest/recipes-text.html#how-to-extract-text-from-within-a-rectangle
     # https://github.com/pymupdf/PyMuPDF-Utilities/tree/master/textbox-extraction
     # https://github.com/benlongo/remarkable-highlights/blob/0608dea6ba1f5ce46c540e623c55649f8f918b5c/remarkable_highlights/extract.py#L131

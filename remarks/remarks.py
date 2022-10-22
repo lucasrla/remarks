@@ -15,7 +15,7 @@ from .conversion.parsing import (
 )
 from .conversion.text import (
     check_if_text_extractable,
-    create_md_from_word_blocks,
+    extract_text_from_pdf_annotations,
     extract_text_from_smart_highlights,
 )
 from .conversion.ocrmypdf import (
@@ -23,7 +23,7 @@ from .conversion.ocrmypdf import (
     run_ocr,
 )
 from .conversion.drawing import (
-    draw_annotations,
+    draw_annotations_on_pdf,
     add_smart_highlight_annotations,
 )
 from .utils import (
@@ -174,7 +174,7 @@ def process_document(
         # PDF document with page that will be annotated
         ann_doc = fitz.open()
 
-        # Create and insert page (with the right dimensions) to be annotated
+        # Create a page (with the appropriate dimensions) to be annotated
         pdf_src_dims = (
             pdf_src.load_page(page_idx).rect.width,
             pdf_src.load_page(page_idx).rect.height,
@@ -217,7 +217,10 @@ def process_document(
         is_ocred = False
         # This is for highlights that reMarkable's own "smart" detection misses
         # Most likely, they're highlights on scanned / image-based PDF, so in
-        # order to extract any text from it, we need to run it through an OCR
+        # order to extract any text from it, we need to run the PDF through OCR
+
+        # TODO: isn't it faster to run ocr through the whole PDF document at
+        # once? (as opposed to doing it per page)
         if (
             doc_type == "pdf"
             and "highlights" in ann_type
@@ -230,7 +233,7 @@ def process_document(
             ann_doc, ann_page = process_ocr(ann_doc, ann_page)
             is_ocred = True
 
-        ann_page = draw_annotations(ann_data, ann_page)
+        ann_page = draw_annotations_on_pdf(ann_data, ann_page)
 
         # TODO: add ability to extract highlighted images / tables (via pixmaps)?
 
@@ -240,7 +243,7 @@ def process_document(
             and has_ann_hl
             and (is_text_extractable or is_ocred)
         ):
-            ann_hl_text = create_md_from_word_blocks(
+            ann_hl_text = extract_text_from_pdf_annotations(
                 ann_page, malformed=assume_malformed_pdfs, md_format=hl_md_format
             )
         elif "highlights" in ann_type and has_ann_hl and doc_type == "pdf":
@@ -302,10 +305,13 @@ def process_document(
                 pdf_src.insert_pdf(ann_doc, start_at=page_idx)
                 pdf_src.delete_page(page_idx + 1)
 
-            # Else, draw annotations in the original PDF page (in-place)
-            # to do our best to preserve links (and also the original page size)
+            # Else, draw annotations on the original PDF page (in-place) to do
+            # our best to preserve in-PDF links and the original page size
             else:
-                draw_annotations(ann_data, pdf_src[page_idx], inplace=True)
+                draw_annotations_on_pdf(ann_data, pdf_src[page_idx], inplace=True)
+                add_smart_highlight_annotations(
+                    smart_hl_data, pdf_src[page_idx], inplace=True
+                )
 
         ann_doc.close()
 

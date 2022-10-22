@@ -9,13 +9,13 @@ from .parsing import (
 
 from .drawing import (
     # draw_svg,
-    draw_annotations,
+    draw_annotations_on_pdf,
     add_smart_highlight_annotations,
 )
 
 from .text import (
     check_if_text_extractable,
-    create_md_from_word_blocks,
+    extract_text_from_pdf_annotations,
     extract_text_from_smart_highlights,
 )
 

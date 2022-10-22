@@ -90,7 +90,7 @@ def prepare_segments(data):
     return segs
 
 
-def draw_annotations(data, page, color=True, inplace=False):
+def draw_annotations_on_pdf(data, page, color=True, inplace=False):
     c = COLOR if color else GRAYSCALE
 
     segments = prepare_segments(data)
@@ -137,7 +137,7 @@ def draw_annotations(data, page, color=True, inplace=False):
 
 
 # Highlights from reMarkable's own "smart" highlighting (introduced in 2.7)
-def add_smart_highlight_annotations(hl_data, page):
+def add_smart_highlight_annotations(hl_data, page, inplace=False):
     hl_list = hl_data["highlights"][0]
 
     for hl in hl_list:
@@ -145,4 +145,5 @@ def add_smart_highlight_annotations(hl_data, page):
         quads = page.search_for(hl["text"], quads=True)
         page.add_highlight_annot(quads)
 
-    return page
+    if not inplace:
+        return page
