@@ -14,8 +14,9 @@ from .conversion.parsing import (
     get_ann_max_bound,
 )
 from .conversion.text import (
+    check_if_text_extractable,
     create_md_from_word_blocks,
-    is_text_extractable,
+    extract_text_from_smart_highlights,
 )
 from .conversion.ocrmypdf import (
     is_tool,
@@ -30,7 +31,6 @@ from .utils import (
     get_document_filetype,
     get_visible_name,
     get_ui_path,
-    get_page_dims,
     list_pages_uuids,
     list_ann_rm_files,
     list_hl_json_files,
@@ -98,35 +98,35 @@ def process_document(
     hl_md_format="whole_block",
     avoid_ocr=False,
 ):
-    pages = list_pages_uuids(metadata_path)
+    pages_list = list_pages_uuids(metadata_path)
     # print("- Number of pages:", len(pages))
     # print(pages)
 
-    if not pages:
+    if len(pages_list) == 0:
         return
 
-    pages_magnitude = math.floor(math.log10(len(pages))) + 1
+    pages_magnitude = math.floor(math.log10(len(pages_list))) + 1
 
     ann_rm_files = list_ann_rm_files(metadata_path)  # scribbles
     # print("ann_rm_files", ann_rm_files)
     hl_json_files = list_hl_json_files(metadata_path)  # highlights
     # print("hl_json_files", hl_json_files)
 
-    if ann_type == "scribbles" and not len(ann_rm_files):
+    if ann_type == "scribbles" and len(ann_rm_files) == 0:
         logging.info(
-            "- You asked for scribbles, but we couldn't find any of those on this document"
+            "- You asked for scribbles, but we couldn't find any of those on this document. Will skip this one"
         )
         return
 
-    if ann_type == "highlights" and not len(hl_json_files):
+    if ann_type == "highlights" and len(hl_json_files) == 0 and len(ann_rm_files) == 0:
         logging.info(
-            "- You asked for highlights, but we couldn't find anything highlighted on this document"
+            "- You asked for highlights, but we couldn't find anything highlighted on this document. Will skip this one"
         )
         return
 
-    if ann_type is None and not len(hl_json_files) and not len(ann_rm_files):
+    if len(hl_json_files) == 0 and len(ann_rm_files) == 0:
         logging.info(
-            "- Found nothing annotated on this document (no scribbles, no highlights)"
+            "- Found nothing annotated on this document (no scribbles, no highlights). Will skip this one"
         )
         return
 
@@ -137,80 +137,126 @@ def process_document(
         mod_pdf = fitz.open()
         pages_order = []
 
+    # Original PDF source document
+    f = metadata_path.with_name(f"{metadata_path.stem}.pdf")
+    pdf_src = fitz.open(f)
+
     pages_to_process = set(
         [f.stem for f in ann_rm_files] + [f.stem for f in hl_json_files]
     )
 
     for page_uuid in pages_to_process:
-        page_idx = pages.index(f"{page_uuid}")
+        page_idx = pages_list.index(f"{page_uuid}")
         # print("page_uuid:", page_uuid)
         # print("page_idx", page_idx)
 
-        ann_file = None
-        hl_file = None
+        ann_rm_file = None
+        hl_json_file = None
+
+        has_ann = False
+        has_smart_hl = False
+        has_ann_hl = False
 
         for f in ann_rm_files:
             if page_uuid == f.stem:
-                ann_file = f
+                ann_rm_file = f
+                has_ann = True
 
         for f in hl_json_files:
             if page_uuid == f.stem:
-                hl_file = f
+                hl_json_file = f
+                has_smart_hl = True
 
-        page_w, page_h = get_page_dims(metadata_path, doc_type, page_idx=page_idx)
-        scale = get_page_to_device_ratio(page_w, page_h)
-        # print("page_w, page_h, scale", page_w, page_h, scale)
+        is_text_extractable = check_if_text_extractable(
+            pdf_src[page_idx], malformed=assume_malformed_pdfs
+        )
 
-        f = metadata_path.with_name(f"{metadata_path.stem}.pdf")
-        pdf_src = fitz.open(f)
-
+        # PDF document with page that will be annotated
         ann_doc = fitz.open()
 
-        (
-            ann_page,
-            ann_data,
-            is_ann_out_page,
-            has_highlighter,
-            is_extractable,
-            is_ocred,
-        ) = prepare_annotations(
-            ann_doc,
-            ann_file,
-            ann_type,
-            page_idx,
-            page_w,
-            page_h,
-            scale,
-            pdf_src,
-            assume_malformed_pdfs,
-            avoid_ocr,
+        # Create and insert page (with the right dimensions) to be annotated
+        pdf_src_dims = (
+            pdf_src.load_page(page_idx).rect.width,
+            pdf_src.load_page(page_idx).rect.height,
         )
+        scale = get_page_to_device_ratio(pdf_src_dims[0], pdf_src_dims[1])
+        rescaled_device_dims = get_rescaled_device_dims(scale)
+        ann_page = ann_doc.new_page(
+            width=rescaled_device_dims[0], height=rescaled_device_dims[1]
+        )
+        page_dims_fitted_to_device = get_adjusted_page_dims(
+            pdf_src_dims[0], pdf_src_dims[1], scale
+        )
+        page_rect = fitz.Rect(
+            0, 0, page_dims_fitted_to_device[0], page_dims_fitted_to_device[1]
+        )
+        ann_page.show_pdf_page(page_rect, pdf_src, pno=page_idx)
+
+        is_ann_out_page = False
+        if "scribbles" in ann_type and has_ann:
+            parsed_data, has_ann_hl = parse_rm_file(ann_rm_file)
+            # print(parsed_data)
+
+            ann_data = rescale_parsed_data(parsed_data, scale)
+            # print(ann_data)
+
+            # Check if there are annotations outside the original page limits
+            try:
+                x_max, y_max = get_ann_max_bound(ann_data)
+                is_ann_out_page = (x_max > page_dims_fitted_to_device[0]) or (
+                    y_max > page_dims_fitted_to_device[1]
+                )
+            except:
+                is_ann_out_page = False
+
+        if "highlights" not in ann_type and has_ann_hl:
+            logging.info(
+                "- Found highlighted text on page #{page_idx} but `--ann_type` flag is set to `scribbles` only, so we won't bother with it"
+            )
+
+        is_ocred = False
+        # This is for highlights that reMarkable's own "smart" detection misses
+        # Most likely, they're highlights on scanned / image-based PDF, so in
+        # order to extract any text from it, we need to run it through an OCR
+        if (
+            doc_type == "pdf"
+            and "highlights" in ann_type
+            and has_ann_hl
+            and not is_text_extractable
+            and is_tool("ocrmypdf")
+            and not avoid_ocr
+        ):
+            logging.warning("- Will run OCRmyPDF on this document. Hold on!")
+            ann_doc, ann_page = process_ocr(ann_doc, ann_page)
+            is_ocred = True
 
         ann_page = draw_annotations(ann_data, ann_page)
 
-        # If there's a hl_file, then there are reMarkable's "smart" highlights,
-        # add them as annotations to page and tag it as is_extractable
-        if hl_file is not None:
-            hl_data = load_json_file(hl_file)
-            ann_page = add_smart_highlight_annotations(hl_data, ann_page)
-            is_extractable = True
+        # TODO: add ability to extract highlighted images / tables (via pixmaps)?
 
-        # TODO: either improve add_smart_highlight_annotations() and extract_highlighted_text() for smart highlights
-        # or use extract_text_from_smart_highlights() instead!
-        #
-        # the latter currently is more reliable than the present method of
-        # running smart highlights through extract_highlighted_text()
+        ann_hl_text = ""
+        if (
+            "highlights" in ann_type
+            and has_ann_hl
+            and (is_text_extractable or is_ocred)
+        ):
+            ann_hl_text = create_md_from_word_blocks(
+                ann_page, malformed=assume_malformed_pdfs, md_format=hl_md_format
+            )
+        elif "highlights" in ann_type and has_ann_hl and doc_type == "pdf":
+            logging.info(
+                f"- Found highlights on page #{page_idx} but couldn't extract them to Markdown. Maybe run it through OCRmyPDF next time?"
+            )
 
-        hl_text = extract_highlighted_text(
-            ann_page,
-            ann_type,
-            page_idx,
-            has_highlighter,
-            is_extractable,
-            is_ocred,
-            assume_malformed_pdfs,
-            hl_md_format,
-        )
+        smart_hl_text = ""
+        if "highlights" in ann_type and has_smart_hl:
+            smart_hl_data = load_json_file(hl_json_file)
+            ann_page = add_smart_highlight_annotations(smart_hl_data, ann_page)
+            smart_hl_text = extract_text_from_smart_highlights(
+                smart_hl_data, md_format=hl_md_format
+            )
+
+        hl_text = smart_hl_text + "\n\n" + ann_hl_text
 
         if per_page_targets:
             if "pdf" in per_page_targets:
@@ -251,7 +297,7 @@ def process_document(
         if combined_pdf:
             # If there are annotations outside the original page limits
             # or if the PDF has been OCRed by us, insert the annotated page
-            # that we have reconstructed from scratch
+            # that we've just (re)created from scratch
             if is_ann_out_page or is_ocred:
                 pdf_src.insert_pdf(ann_doc, start_at=page_idx)
                 pdf_src.delete_page(page_idx + 1)
@@ -288,125 +334,25 @@ def process_document(
     pdf_src.close()
 
 
-def prepare_annotations(
-    ann_doc,
-    ann_file,
-    ann_type,
-    idx,
-    page_w,
-    page_h,
-    scale,
-    pdf_src,
-    assume_malformed_pdfs,
-    avoid_ocr,
-):
-    ann_data = None
+def process_ocr(ann_doc, ann_page):
+    tmp_fname = "_tmp.pdf"
+    ann_doc.save(tmp_fname)
 
-    rm_w_rescaled, rm_h_rescaled = get_rescaled_device_dims(scale)
-    ann_page = ann_doc.new_page(width=rm_w_rescaled, height=rm_h_rescaled)
+    # Note that OCRmyPDF does not recognize handwriting (as of Oct 2022)
+    # https://github.com/ocrmypdf/OCRmyPDF/blob/7bd0e43243a05e56a92d6b00fcaa3c826fb3cccd/docs/introduction.rst#L152
+    # "- It is not capable of recognizing handwriting."
+    tmp_fname = run_ocr(tmp_fname)
 
-    page_w_adj, page_h_adj = get_adjusted_page_dims(page_w, page_h, scale)
-    page_rect = fitz.Rect(0, 0, page_w_adj, page_h_adj)
+    tmp_doc = fitz.open(tmp_fname)
 
-    ann_page.show_pdf_page(page_rect, pdf_src, pno=idx)
+    # Insert the brand new OCRed page as the first one (index=0)
+    ann_doc.insert_pdf(tmp_doc, start_at=0)
+    # Delete the non-OCRed page, now in the second position (index=1)
+    ann_doc.delete_page(1)
+    # Update ann_page reference to the OCRed page
+    ann_page = ann_doc[0]
 
-    has_highlighter = False
-    is_extractable = False
-    is_ocred = False
+    tmp_doc.close()
+    pathlib.Path(tmp_fname).unlink()
 
-    if (ann_type == "scribbles" or ann_type is None) and ann_file is not None:
-        parsed_data, has_highlighter = parse_rm_file(ann_file)
-        # print(parsed_data)
-
-        ann_data = rescale_parsed_data(parsed_data, scale)
-        # print(ann_data)
-
-        # Check if there are annotations outside the original page limits
-        try:
-            x_max, y_max = get_ann_max_bound(ann_data)
-            is_ann_out_page = (x_max > page_w_adj) or (y_max > page_h_adj)
-        except:
-            is_ann_out_page = False
-
-    # This is for highlights that reMarkable's own "smart" detection misses
-    # Most likely, they're highlights on scanned / image-based PDF,
-    # so in order to extract any text from it, we need to run it through an OCR
-    if (ann_type == "highlights" or ann_type is None) and has_highlighter:
-        is_extractable = is_text_extractable(
-            pdf_src[idx], malformed=assume_malformed_pdfs
-        )
-
-        if (
-            not is_extractable
-            and pdf_src is not None
-            and is_tool("ocrmypdf")
-            and not avoid_ocr
-        ):
-            logging.warning("- Will run OCRmyPDF on this document. Hold on!")
-
-            tmp_fname = "_tmp.pdf"
-            ann_doc.save(tmp_fname)
-
-            # Note that OCRmyPDF does not recognize handwriting (as of Oct 2022)
-            # https://github.com/ocrmypdf/OCRmyPDF/blob/7bd0e43243a05e56a92d6b00fcaa3c826fb3cccd/docs/introduction.rst#L152
-            # "- It is not capable of recognizing handwriting."
-            tmp_fname = run_ocr(tmp_fname)
-
-            tmp_doc = fitz.open(tmp_fname)
-
-            # Insert the brand new OCRed page as the first one (index=0)
-            ann_doc.insert_pdf(tmp_doc, start_at=0)
-            # Delete the non-OCRed page, now in the second position (index=1)
-            ann_doc.delete_page(1)
-            # Update ann_page reference to the OCRed page
-            ann_page = ann_doc[0]
-
-            tmp_doc.close()
-            pathlib.Path(tmp_fname).unlink()
-
-            is_ocred = True
-
-    if ann_type == "scribbles" and has_highlighter:
-        logging.info(
-            "- Found highlighted text on page #{idx} but `--ann_type` flag was set to `scribbles` only, so we won't bother with it"
-        )
-
-    return (
-        ann_page,
-        ann_data,
-        is_ann_out_page,
-        has_highlighter,
-        is_extractable,
-        is_ocred,
-    )
-
-
-def extract_highlighted_text(
-    ann_page,
-    ann_type,
-    page_idx,
-    has_highlighter,
-    is_extractable,
-    is_ocred,
-    assume_malformed_pdfs,
-    hl_md_format,
-):
-    hl_text = ""
-
-    # TODO: add ability to extract highlighted images / tables (via pixmaps)?
-
-    if ann_type == "highlights" or ann_type is None:
-        if is_extractable or is_ocred:
-            hl_text = create_md_from_word_blocks(
-                ann_page, malformed=assume_malformed_pdfs, md_format=hl_md_format
-            )
-        else:
-            logging.info(
-                f"- Found highlights on page #{page_idx} but couldn't extract them to Markdown"
-            )
-
-    if ann_type == "highlights" and not has_highlighter and not is_extractable:
-        logging.info(f"- Couldn't find any highlighted text on page #{page_idx}")
-
-    # print("hl_text:", hl_text)
-    return hl_text
+    return ann_doc, ann_page

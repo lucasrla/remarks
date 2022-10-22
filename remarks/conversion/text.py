@@ -5,7 +5,7 @@ import fitz
 
 
 # TODO: improve this check, it is still very rudimentary
-def is_text_extractable(page, malformed=False):
+def check_if_text_extractable(page, malformed=False):
     text_encoded = page.get_text("text").encode("utf-8")
     # print(text_encoded)
 
@@ -239,8 +239,8 @@ def create_md_from_word_blocks(page, malformed=False, md_format="whole_block"):
 def extract_text_from_smart_highlights(hl_data, md_format="whole_block"):
     hl_list = hl_data["highlights"][0]
 
-    # Sorting is needed because highlights were added to list according to
-    # timestamp, not natural order
+    # Sorting is needed because highlights are added to list according to
+    # "timestamp", not necessarily natural order
     sorted_hl_list = sorted(hl_list, key=operator.itemgetter("start"))
 
     curr_group = []
@@ -256,17 +256,17 @@ def extract_text_from_smart_highlights(hl_data, md_format="whole_block"):
         num_chars_tolerance = 2
 
         # If current highlight ends before the next one (with some tolerance),
-        # assume there should be in different "groups"
+        # assume they should belong to different "groups"
         if hl_end + num_chars_tolerance < hl_next["start"]:
             hl_word_groups.append(curr_group)
             curr_group = []
 
-    # Add the last highlight, because of how itertools.pairwise behaves we are
-    # missing it
+    # Add the last highlight, because of how itertools.pairwise behaves we'd
+    # miss it
     curr_group.append(sorted_hl_list[-1]["text"])
     hl_word_groups.append(curr_group)
 
-    # print(hl_word_groups)
+    # print("smart_hl_word_groups:", hl_word_groups)
 
     if md_format == "whole_block":
         hl_word_groups = [" ".join(group) for group in hl_word_groups]

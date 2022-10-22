@@ -14,8 +14,8 @@ from .drawing import (
 )
 
 from .text import (
+    check_if_text_extractable,
     create_md_from_word_blocks,
-    is_text_extractable,
     extract_text_from_smart_highlights,
 )
 

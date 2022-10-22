@@ -1,8 +1,6 @@
 import json
 import pathlib
 
-import fitz  # PyMuPDF
-
 
 def read_meta_file(path, suffix=".metadata"):
     file = path.with_name(f"{path.stem}{suffix}")
@@ -52,16 +50,6 @@ def get_ui_path(path):
         parent_filename = metadata["parent"]
 
     return ui_path
-
-
-def get_page_dims(metadata_path, doc_type, page_idx=0):
-    if doc_type in ["pdf", "epub"]:
-        f = metadata_path.with_name(f"{metadata_path.stem}.{doc_type}")
-        with fitz.open(f) as doc:
-            first_page = doc.load_page(page_idx)
-            return first_page.rect.width, first_page.rect.height
-    else:
-        raise ValueError(f"Unknown document type: {doc_type}")
 
 
 def list_pages_uuids(path):
