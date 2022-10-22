@@ -294,21 +294,23 @@ def process_document(
             mod_pdf.insert_pdf(ann_doc, start_at=-1)
             pages_order.append(page_idx)
 
-        if combined_md:
+        if combined_md and (has_ann_hl or has_smart_hl):
             combined_md_strs += [(page_idx, hl_text + "\n")]
 
-        if combined_pdf:
-            # If there are annotations outside the original page limits
-            # or if the PDF has been OCRed by us, insert the annotated page
-            # that we've just (re)created from scratch
-            if is_ann_out_page or is_ocred:
-                pdf_src.insert_pdf(ann_doc, start_at=page_idx)
-                pdf_src.delete_page(page_idx + 1)
+        # If there are annotations outside the original page limits
+        # or if the PDF has been OCRed by us, insert the annotated page
+        # that we've just (re)created from scratch
+        if combined_pdf and (is_ann_out_page or is_ocred):
+            pdf_src.insert_pdf(ann_doc, start_at=page_idx)
+            pdf_src.delete_page(page_idx + 1)
 
-            # Else, draw annotations on the original PDF page (in-place) to do
-            # our best to preserve in-PDF links and the original page size
-            else:
+        # Else, draw annotations on the original PDF page (in-place) to do
+        # our best to preserve in-PDF links and the original page size
+        elif combined_pdf:
+            if has_ann:
                 draw_annotations_on_pdf(ann_data, pdf_src[page_idx], inplace=True)
+
+            if has_smart_hl:
                 add_smart_highlight_annotations(
                     smart_hl_data, pdf_src[page_idx], inplace=True
                 )
@@ -327,7 +329,7 @@ def process_document(
         mod_pdf.save(f"{out_doc_path_str} _remarks-only.pdf")
         mod_pdf.close()
 
-    if combined_md:
+    if combined_md and len(combined_md_strs) > 0:
         combined_md_strs = sorted(combined_md_strs, key=lambda t: t[0])
         combined_md_str = "".join(
             [f"\nPage {s[0]}\n--------\n" + s[1] for s in combined_md_strs]
