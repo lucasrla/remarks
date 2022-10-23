@@ -31,13 +31,15 @@ RM_TOOLS = {
 }
 
 
+# TODO: My parsing & drawing is such a mess... Refactor it someday
+
 # TODO: Review stroke-width and opacity for all tools
 
 # TODO: Add support for pressure and tilting as well
 # for e.g. Paintbrush (Brush), CalligraphyPen, TiltPencil, etc
 
 
-def process_tool_meta(pen, dims, w, opc, cc):
+def process_tool(pen, dims, w, opc):
     tool = RM_TOOLS[pen]
     # print(tool)
 
@@ -53,32 +55,27 @@ def process_tool_meta(pen, dims, w, opc, cc):
     elif tool == "Highlighter":
         w = 30
         opc = 0.6
-        cc = 3
+        # cc = 3
     elif tool == "Eraser":
         w = 1280 * w * w - 4800 * w + 4510
-        cc = 2
+        # cc = 2
     elif tool == "SharpPencil" or tool == "TiltPencil":
         w = 16 * w - 27
         opc = 0.9
     elif tool == "EraseArea":
         opc = 0.0
     else:
-        raise ValueError("Found an unknown tool: {pen}")
+        raise ValueError(f"Found an unknown tool: {pen}")
 
     w /= 2.3  # Adjust to A4
-
-    meta = {}
-    meta["pen-code"] = pen
-    meta["color-code"] = cc
 
     name_code = f"{tool}_{pen}"
 
     # Shorthands: w for stroke-width, opc for opacity
-    return name_code, meta, w, opc
+    return name_code, w, opc
 
 
 def adjust_xypos_sizes(xpos, ypos, dims):
-
     ratio = (dims["y"] / dims["x"]) / (RM_HEIGHT / RM_WIDTH)
 
     if ratio > 1:
@@ -91,19 +88,19 @@ def adjust_xypos_sizes(xpos, ypos, dims):
     return xpos, ypos
 
 
-def update_stroke_dict(st, tool, tool_meta):
+def update_stroke_dict(st, tool):
     st[tool] = {}
-    st[tool]["tool"] = tool_meta
-    st[tool]["segments"] = {}
+    st[tool]["segments"] = []
     return st
 
 
-def update_seg_dict(sg, name, opacity, stroke_width):
-    sg[name] = {}
-    sg[name]["style"] = {}
-    sg[name]["style"]["opacity"] = f"{opacity:.3f}"
-    sg[name]["style"]["stroke-width"] = f"{stroke_width:.3f}"
-    sg[name]["points"] = []
+def create_seg_dict(opacity, stroke_width, cc):
+    sg = {}
+    sg["style"] = {}
+    sg["style"]["opacity"] = f"{opacity:.3f}"
+    sg["style"]["stroke-width"] = f"{stroke_width:.3f}"
+    sg["style"]["color-code"] = cc
+    sg["points"] = []
     return sg
 
 
@@ -159,23 +156,15 @@ def parse_rm_file(file_path, dims={"x": RM_WIDTH, "y": RM_HEIGHT}):
 
             opc = 1  # opacity
 
-            tool, tool_meta, stroke_width, opacity = process_tool_meta(
-                pen, dims, w, opc, cc
-            )
-            # print(f"tool={tool}, tool_meta={tool_meta}, stroke_width={stroke_width}, opacity={opacity}")
+            tool, stroke_width, opacity = process_tool(pen, dims, w, opc)
 
             if "Highlighter" in tool:
                 has_highlighter = True
 
-            seg_name = "default"
-
             if tool not in l["strokes"].keys():
-                l["strokes"] = update_stroke_dict(l["strokes"], tool, tool_meta)
+                l["strokes"] = update_stroke_dict(l["strokes"], tool)
 
-                l["strokes"][tool]["segments"] = update_seg_dict(
-                    l["strokes"][tool]["segments"], seg_name, opacity, stroke_width
-                )
-
+            sg = create_seg_dict(opacity, stroke_width, cc)
             p = []
 
             for _ in range(nsegs):
@@ -186,7 +175,9 @@ def parse_rm_file(file_path, dims={"x": RM_WIDTH, "y": RM_HEIGHT}):
                 xpos, ypos = adjust_xypos_sizes(x, y, dims)
                 p.append((f"{xpos:.3f}", f"{ypos:.3f}"))
 
-            l["strokes"][tool]["segments"][seg_name]["points"].append(p)
+            sg["points"].append(p)
+            # print("sg", sg)
+            l["strokes"][tool]["segments"].append(sg)
 
         output["layers"].append(l)
 
@@ -200,7 +191,8 @@ def rescale_parsed_data(parsed_data, scale):
 
     for strokes in parsed_data["layers"]:
         for _, st_value in strokes["strokes"].items():
-            for _, sg_value in st_value["segments"].items():
+            for _, sg_value in enumerate(st_value["segments"]):
+                # print("sg_value", sg_value)
 
                 sg_value["style"][
                     "stroke-width"
@@ -225,7 +217,7 @@ def get_ann_max_bound(parsed_data):
 
     for strokes in parsed_data["layers"]:
         for _, st_value in strokes["strokes"].items():
-            for _, sg_value in st_value["segments"].items():
+            for _, sg_value in enumerate(st_value["segments"]):
                 for points in sg_value["points"]:
                     line = geom.LineString([(float(p[0]), float(p[1])) for p in points])
                     collection.append(line)

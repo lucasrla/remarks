@@ -9,12 +9,24 @@ from ..utils import (
 )
 
 
-GRAYSCALE = {0: "black", 1: "grey", 2: "white"}
-COLOR = {0: "blue", 1: "red", 2: "white", 3: "yellow", 6: "blue", 7: "red"}
+HL_COLOR_CODES = {
+    3: "yellow",
+    4: "green",
+    5: "magenta",
+    8: "gray",
+}
+
+SC_COLOR_CODES = {
+    0: "black",
+    1: "gray",
+    2: "white",
+    6: "blue",
+    7: "red",
+}
 
 
-def draw_svg(data, dims={"x": RM_WIDTH, "y": RM_HEIGHT}, color=True):
-    stroke_color = COLOR if color else GRAYSCALE
+def draw_svg(data, dims={"x": RM_WIDTH, "y": RM_HEIGHT}):
+    stroke_color = SC_COLOR_CODES
 
     output = f'<svg xmlns="http://www.w3.org/2000/svg" width="{dims["x"]}" height="{dims["y"]}">'
 
@@ -67,15 +79,14 @@ def prepare_segments(data):
 
     for layer in data["layers"]:
         for st_name, st_content in layer["strokes"].items():
-
-            for sg_name, sg_content in st_content["segments"].items():
-                name = f"{st_name}_{sg_name}"
+            for i, sg_content in enumerate(st_content["segments"]):
+                name = f"{st_name}_{i}"
                 segs[name] = {}
 
                 segs[name]["stroke-width"] = float(sg_content["style"]["stroke-width"])
 
                 segs[name]["opacity"] = float(sg_content["style"]["opacity"])
-                segs[name]["color-code"] = st_content["tool"]["color-code"]
+                segs[name]["color-code"] = sg_content["style"]["color-code"]
 
                 segs[name]["points"] = []
                 segs[name]["lines"] = []
@@ -96,9 +107,7 @@ def prepare_segments(data):
     return segs
 
 
-def draw_annotations_on_pdf(data, page, color=True, inplace=False):
-    c = COLOR if color else GRAYSCALE
-
+def draw_annotations_on_pdf(data, page, inplace=False):
     segments = prepare_segments(data)
 
     for seg_name, seg_data in segments.items():
@@ -123,6 +132,14 @@ def draw_annotations_on_pdf(data, page, color=True, inplace=False):
             try:
                 # https://pymupdf.readthedocs.io/en/latest/recipes-annotations.html#how-to-add-and-modify-annotations
                 annot = page.add_highlight_annot(seg_data["rects"])
+
+                # Now supporting colors
+                color_array = fitz.utils.getColor(
+                    HL_COLOR_CODES[seg_data["color-code"]]
+                )
+                annot.set_colors(stroke=color_array)
+
+                annot.set_opacity(seg_data["opacity"])
                 annot.set_border(width=seg_data["stroke-width"])
                 annot.update()
 
@@ -139,13 +156,16 @@ def draw_annotations_on_pdf(data, page, color=True, inplace=False):
         # Scribbles
         else:
             for seg_points in seg_data["points"]:
-                color_array = fitz.utils.getColor(c[seg_data["color-code"]])
-
-                # Inspired by https://pymupdf.readthedocs.io/en/latest/recipes-annotations.html#how-to-use-ink-annotations
+                # https://pymupdf.readthedocs.io/en/latest/recipes-annotations.html#how-to-use-ink-annotations
                 annot = page.add_ink_annot([seg_points])
                 annot.set_border(width=seg_data["stroke-width"])
                 annot.set_opacity(seg_data["opacity"])
+
+                color_array = fitz.utils.getColor(
+                    SC_COLOR_CODES[seg_data["color-code"]]
+                )
                 annot.set_colors(stroke=color_array)
+
                 annot.update()
 
     if not inplace:
@@ -159,7 +179,14 @@ def add_smart_highlight_annotations(hl_data, page, inplace=False):
     for hl in hl_list:
         # https://pymupdf.readthedocs.io/en/latest/page.html#Page.add_highlight_annot
         quads = page.search_for(hl["text"], quads=True)
-        page.add_highlight_annot(quads)
+
+        annot = page.add_highlight_annot(quads)
+
+        # Support to colors
+        color_array = fitz.utils.getColor(HL_COLOR_CODES[hl["color"]])
+        annot.set_colors(stroke=color_array)
+
+        annot.update()
 
     if not inplace:
         return page
