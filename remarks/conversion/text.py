@@ -101,7 +101,11 @@ def get_page_text_tuples(
         return tuples_list
 
 
-def extract_text_from_pdf_annotations(page, malformed=False, md_format="whole_block"):
+def extract_text_from_pdf_annotations(
+    page,
+    malformed=False,
+    presentation="whole_block",
+):
     # https://pymupdf.readthedocs.io/en/latest/recipes-text.html#how-to-extract-text-from-within-a-rectangle
     # https://github.com/pymupdf/PyMuPDF-Utilities/tree/master/textbox-extraction
     # https://github.com/benlongo/remarkable-highlights/blob/0608dea6ba1f5ce46c540e623c55649f8f918b5c/remarkable_highlights/extract.py#L131
@@ -181,7 +185,7 @@ def extract_text_from_pdf_annotations(page, malformed=False, md_format="whole_bl
 
         # print("hl_word_groups:", hl_word_groups)
 
-    if md_format == "whole_block":
+    if presentation == "whole_block":
         text_blocks_list = get_page_text_tuples(
             page, option="blocks", sort=is_sort_needed, text_only=True
         )
@@ -228,15 +232,20 @@ def extract_text_from_pdf_annotations(page, malformed=False, md_format="whole_bl
 
         return "\n\n".join(md_blocks_with_marks)
 
-    elif md_format == "bullet_points":
+    elif presentation == "bullet_points":
         hl_word_groups = ["- " + " ".join(group) for group in hl_word_groups]
         return "\n".join(hl_word_groups)
 
     else:
-        raise ValueError("Invalid md_format. Check your `--hl_md_format` flag")
+        raise ValueError(
+            "Invalid formatting for Markdown. Check your `--hl_md_format` flag"
+        )
 
 
-def extract_text_from_smart_highlights(hl_data, md_format="whole_block"):
+def extract_text_from_smart_highlights(
+    hl_data,
+    presentation="whole_block",
+):
     hl_list = hl_data["highlights"][0]
 
     # Sorting is needed because highlights are added to list according to
@@ -268,13 +277,15 @@ def extract_text_from_smart_highlights(hl_data, md_format="whole_block"):
 
     # print("smart_hl_word_groups:", hl_word_groups)
 
-    if md_format == "whole_block":
+    if presentation == "whole_block":
         hl_word_groups = [" ".join(group) for group in hl_word_groups]
         return "\n\n".join(hl_word_groups)
 
-    elif md_format == "bullet_points":
+    elif presentation == "bullet_points":
         hl_word_groups = ["- " + " ".join(group) for group in hl_word_groups]
         return "\n".join(hl_word_groups)
 
     else:
-        raise ValueError("Invalid md_format. Check your `--hl_md_format` flag")
+        raise ValueError(
+            "Invalid formatting for Markdown. Check your `--md_hl_format` flag"
+        )
