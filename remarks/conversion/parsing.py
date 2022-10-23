@@ -1,12 +1,12 @@
 import struct
 
-import json
-
 import shapely.geometry as geom  # Shapely
 
-# reMarkable defaults
-RM_WIDTH = 1404
-RM_HEIGHT = 1872
+from ..utils import (
+    RM_WIDTH,
+    RM_HEIGHT,
+)
+
 
 # reMarkable tools
 # http://web.archive.org/web/20190806120447/https://support.remarkable.com/hc/en-us/articles/115004558545-5-1-Tools-Overview
@@ -31,39 +31,7 @@ RM_TOOLS = {
 }
 
 
-def get_adjusted_pdf_dims(pdf_width, pdf_height, scale):
-    if (pdf_width / pdf_height) >= (RM_WIDTH / RM_HEIGHT):
-        adj_w = RM_WIDTH * scale  # "perfect" fitting, no gap
-        adj_h = pdf_height
-    else:
-        adj_w = pdf_width
-        adj_h = RM_HEIGHT * scale  # "perfect" fitting, no gap
-
-    return adj_w, adj_h
-
-
-def get_rescaled_device_dims(scale):
-    return RM_WIDTH * scale, RM_HEIGHT * scale
-
-
-def get_pdf_to_device_ratio(pdf_width, pdf_height):
-    pdf_aspect_ratio = pdf_width / pdf_height
-    device_aspect_ratio = RM_WIDTH / RM_HEIGHT
-
-    # If PDF page is wider than reMarkable's aspect ratio,
-    # use pdf_width as reference for the scale ratio.
-    # There should be no "leftover" (gap) on the horizontal
-    if pdf_aspect_ratio >= device_aspect_ratio:
-        scale = pdf_width / RM_WIDTH
-
-    # PDF page is narrower than reMarkable's a/r,
-    # use pdf_height as reference for the scale ratio.
-    # There should be no "leftover" (gap) on the vertical
-    else:
-        scale = pdf_height / RM_HEIGHT
-
-    return scale
-
+# TODO: My parsing & drawing is such a mess... Refactor it someday
 
 # TODO: Review stroke-width and opacity for all tools
 
@@ -71,8 +39,9 @@ def get_pdf_to_device_ratio(pdf_width, pdf_height):
 # for e.g. Paintbrush (Brush), CalligraphyPen, TiltPencil, etc
 
 
-def process_tool_meta(pen, dims, w, opc, cc):
+def process_tool(pen, dims, w, opc):
     tool = RM_TOOLS[pen]
+    # print(tool)
 
     if tool == "Brush" or tool == "CalligraphyPen":
         pass
@@ -86,31 +55,27 @@ def process_tool_meta(pen, dims, w, opc, cc):
     elif tool == "Highlighter":
         w = 30
         opc = 0.6
+        # cc = 3
     elif tool == "Eraser":
         w = 1280 * w * w - 4800 * w + 4510
-        cc = 2
+        # cc = 2
     elif tool == "SharpPencil" or tool == "TiltPencil":
         w = 16 * w - 27
         opc = 0.9
     elif tool == "EraseArea":
         opc = 0.0
     else:
-        raise ValueError("Found an unknown tool: {pen}")
+        raise ValueError(f"Found an unknown tool: {pen}")
 
     w /= 2.3  # Adjust to A4
-
-    meta = {}
-    meta["pen-code"] = pen
-    meta["color-code"] = cc
 
     name_code = f"{tool}_{pen}"
 
     # Shorthands: w for stroke-width, opc for opacity
-    return name_code, meta, w, opc
+    return name_code, w, opc
 
 
 def adjust_xypos_sizes(xpos, ypos, dims):
-
     ratio = (dims["y"] / dims["x"]) / (RM_HEIGHT / RM_WIDTH)
 
     if ratio > 1:
@@ -123,51 +88,26 @@ def adjust_xypos_sizes(xpos, ypos, dims):
     return xpos, ypos
 
 
-def update_stroke_dict(st, tool, tool_meta):
+def update_stroke_dict(st, tool):
     st[tool] = {}
-    st[tool]["tool"] = tool_meta
-    st[tool]["segments"] = {}
+    st[tool]["segments"] = []
     return st
 
 
-def update_seg_dict(sg, name, opacity, stroke_width):
-    sg[name] = {}
-    sg[name]["style"] = {}
-    sg[name]["style"]["opacity"] = f"{opacity:.3f}"
-    sg[name]["style"]["stroke-width"] = f"{stroke_width:.3f}"
-    sg[name]["points"] = []
+def create_seg_dict(opacity, stroke_width, cc):
+    sg = {}
+    sg["style"] = {}
+    sg["style"]["opacity"] = f"{opacity:.3f}"
+    sg["style"]["stroke-width"] = f"{stroke_width:.3f}"
+    sg["style"]["color-code"] = cc
+    sg["points"] = []
     return sg
 
 
-def split_ann_types(output):
-    highlights = {}
-    highlights["layers"] = []
-
-    scribbles = {}
-    scribbles["layers"] = []
-
-    for layer in output["layers"]:
-        for st_name, st_value in layer["strokes"].items():
-            strokes = {"strokes": {st_name: st_value}}
-
-            if "Highlighter" in st_name:
-                highlights["layers"].append(strokes)
-            else:
-                scribbles["layers"].append(strokes)
-
-    return highlights, scribbles
-
-
-def parse_rm_file(file_path, highlight_file_path, dims={"x": RM_WIDTH, "y": RM_HEIGHT}):
+def parse_rm_file(file_path, dims={"x": RM_WIDTH, "y": RM_HEIGHT}):
     with open(file_path, "rb") as f:
         data = f.read()
-    # It is possible that the highlight file will not exit
-    try:
-        with open(highlight_file_path, "rb") as high_f:
-            high_data = json.load(high_f)
-    except:
-        high_data = {}
-        print("No Highlights File!! Probably only annotations")
+    # print("data:", data)
 
     expected_header_v3 = b"reMarkable .lines file, version=3          "
     expected_header_v5 = b"reMarkable .lines file, version=5          "
@@ -178,6 +118,8 @@ def parse_rm_file(file_path, highlight_file_path, dims={"x": RM_WIDTH, "y": RM_H
     fmt = f"<{len(expected_header_v5)}sI"
 
     header, nlayers = struct.unpack_from(fmt, data, offset)
+    # print("header, nlayers", header, nlayers)
+
     offset += struct.calcsize(fmt)
 
     is_v3 = header == expected_header_v3
@@ -190,6 +132,8 @@ def parse_rm_file(file_path, highlight_file_path, dims={"x": RM_WIDTH, "y": RM_H
 
     output = {}
     output["layers"] = []
+
+    has_highlighter = False
 
     for _ in range(nlayers):
         fmt = "<I"
@@ -212,19 +156,15 @@ def parse_rm_file(file_path, highlight_file_path, dims={"x": RM_WIDTH, "y": RM_H
 
             opc = 1  # opacity
 
-            tool, tool_meta, stroke_width, opacity = process_tool_meta(
-                pen, dims, w, opc, cc
-            )
+            tool, stroke_width, opacity = process_tool(pen, dims, w, opc)
 
-            seg_name = "default"
+            if "Highlighter" in tool:
+                has_highlighter = True
 
             if tool not in l["strokes"].keys():
-                l["strokes"] = update_stroke_dict(l["strokes"], tool, tool_meta)
+                l["strokes"] = update_stroke_dict(l["strokes"], tool)
 
-                l["strokes"][tool]["segments"] = update_seg_dict(
-                    l["strokes"][tool]["segments"], seg_name, opacity, stroke_width
-                )
-
+            sg = create_seg_dict(opacity, stroke_width, cc)
             p = []
 
             for _ in range(nsegs):
@@ -235,75 +175,13 @@ def parse_rm_file(file_path, highlight_file_path, dims={"x": RM_WIDTH, "y": RM_H
                 xpos, ypos = adjust_xypos_sizes(x, y, dims)
                 p.append((f"{xpos:.3f}", f"{ypos:.3f}"))
 
-            l["strokes"][tool]["segments"][seg_name]["points"].append(p)
+            sg["points"].append(p)
+            # print("sg", sg)
+            l["strokes"][tool]["segments"].append(sg)
 
-        # Since I keep the same l, need to wait to append until later
-        #output["layers"].append(l)
+        output["layers"].append(l)
 
-    # This should apply the "new" highlights in v2.8 and later if they exist
-    # for this file. I am going to assume that it is within the rM page,
-    # because it sort of has to by definition.... If it is highlighting text,
-    # then the text has to be on the page....
-    # Loop through all the rectangles
-    temp_cnt = 0
-
-    # Only do this if the highlight file exists. If it does not exist, it 
-    # probably means that there is an annotation on this page, but no
-    # highlights.
-    if high_data:
-        for hl in high_data["highlights"][0]:
-            temp_cnt += 1
-            # First, see if the highlighter18 is added
-            w = 0
-            opc = 0
-            cc = hl["color"]
-            tool, tool_meta, stroke_width, opacity = process_tool_meta(
-                18, dims, w, opc, cc
-            )
-
-            # I am going to overwrite the stroke width by the height of the
-            # highlight. Since I do this, I think I need a new segment each time
-            # since the stroke width might change due to text height
-            # UPDATE FOR rM v2.11
-            # Now, highlights can have multiple rectangles per highlight. 
-            # Need to loop through them. But a segment is a rect
-            seg_name = "new"+ str(temp_cnt)
-            stroke_width = hl["rects"][0]["height"]
-            tool = "{}_{}".format(tool, cc) # quick hack: treat marker colors as different tools
-
-            if tool not in l["strokes"].keys():
-                l["strokes"] = update_stroke_dict(l["strokes"], tool, tool_meta)
-            if seg_name not in l["strokes"][tool].keys():
-                l["strokes"][tool]["segments"] = update_seg_dict(
-                    l["strokes"][tool]["segments"], seg_name, opacity, stroke_width
-                )
-
-            for rn in hl["rects"]:
-
-                p = []
-                # Think I need all four points?
-                x = rn["x"]
-                y = rn["y"]
-                xpos, ypos = adjust_xypos_sizes(x, y, dims)
-                p.append((f"{xpos:.3f}",f"{ypos:.3f}"))
-                x = rn["x"] + rn["width"]
-                xpos, ypos = adjust_xypos_sizes(x, y, dims)
-                p.append((f"{xpos:.3f}",f"{ypos:.3f}"))
-                y = rn["y"] + rn["height"]
-                xpos, ypos = adjust_xypos_sizes(x, y, dims)
-                p.append((f"{xpos:.3f}",f"{ypos:.3f}"))
-                x = rn["x"]
-                xpos, ypos = adjust_xypos_sizes(x, y, dims)
-                p.append((f"{xpos:.3f}",f"{ypos:.3f}"))
-                l["strokes"][tool]["segments"][seg_name]["points"].append(p)
-
-    output["layers"].append(l)
-
-    # Quick and dirty workaround to split highlights and scribbles
-    # TODO: refactor!
-    highlights, scribbles = split_ann_types(output)
-
-    return highlights, scribbles
+    return output, has_highlighter
 
 
 # TODO: make the rescale part of the parsing (or perhaps drawing?) process
@@ -313,7 +191,8 @@ def rescale_parsed_data(parsed_data, scale):
 
     for strokes in parsed_data["layers"]:
         for _, st_value in strokes["strokes"].items():
-            for _, sg_value in st_value["segments"].items():
+            for _, sg_value in enumerate(st_value["segments"]):
+                # print("sg_value", sg_value)
 
                 sg_value["style"][
                     "stroke-width"
@@ -338,11 +217,13 @@ def get_ann_max_bound(parsed_data):
 
     for strokes in parsed_data["layers"]:
         for _, st_value in strokes["strokes"].items():
-            for _, sg_value in st_value["segments"].items():
+            for _, sg_value in enumerate(st_value["segments"]):
                 for points in sg_value["points"]:
                     line = geom.LineString([(float(p[0]), float(p[1])) for p in points])
                     collection.append(line)
 
-    (minx, miny, maxx, maxy) = geom.MultiLineString(collection).bounds
-
-    return (maxx, maxy)
+    if len(collection) > 0:
+        (minx, miny, maxx, maxy) = geom.MultiLineString(collection).bounds
+        return (maxx, maxy)
+    else:
+        return (0, 0)
