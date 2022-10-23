@@ -2,6 +2,11 @@ import json
 import pathlib
 
 
+# reMarkable's device dimensions
+RM_WIDTH = 1404
+RM_HEIGHT = 1872
+
+
 def read_meta_file(path, suffix=".metadata"):
     file = path.with_name(f"{path.stem}{suffix}")
     if not file.exists():
@@ -52,9 +57,11 @@ def get_ui_path(path):
     return ui_path
 
 
-def list_pages_uuids(path):
+def get_pages_data(path):
     content = read_meta_file(path, suffix=".content")
-    return content["pages"]
+    if "redirectionPageMap" in content:
+        return content["pages"], content["redirectionPageMap"]
+    return content["pages"], []
 
 
 def list_ann_rm_files(path):
@@ -83,3 +90,29 @@ def prepare_subdir(base_dir, fmt):
     fmt_dir = pathlib.Path(f"{base_dir}/{fmt}/")
     fmt_dir.mkdir(parents=True, exist_ok=True)
     return fmt_dir
+
+
+def rescale_given_device_aspect_ratio(page_dims):
+    page_width, page_height = page_dims
+    page_aspect_ratio = page_width / page_height
+    device_aspect_ratio = RM_WIDTH / RM_HEIGHT
+
+    scale = 1
+    page_width_rescaled = page_width
+    page_height_rescaled = page_height
+
+    # If doc page is wider than reMarkable's aspect ratio,
+    # use doc_width as reference for the scale ratio.
+    # There should be no "leftover" (gap) on the horizontal
+    if page_aspect_ratio >= device_aspect_ratio:
+        scale = page_width / RM_WIDTH
+        page_width_rescaled = RM_WIDTH * scale
+
+    # PDF page is narrower than reMarkable's a/r,
+    # use pdf_height as reference for the scale ratio.
+    # There should be no "leftover" (gap) on the vertical
+    else:
+        scale = page_height / RM_HEIGHT
+        page_height_rescaled = RM_HEIGHT * scale
+
+    return (page_width_rescaled, page_height_rescaled), scale

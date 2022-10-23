@@ -8,7 +8,7 @@ import subprocess
 # https://stackoverflow.com/questions/11210104/check-if-a-program-exists-from-a-python-script
 
 
-def is_tool(name):
+def is_executable_available(name):
     """Check whether `name` is on PATH and marked as executable."""
 
     # from whichcraft import which

@@ -1,7 +1,11 @@
-from .parsing import RM_WIDTH, RM_HEIGHT
-
 import fitz  # PyMuPDF
 import shapely.geometry as geom  # Shapely
+
+from ..utils import (
+    RM_WIDTH,
+    RM_HEIGHT,
+)
+
 
 GRAYSCALE = {0: "black", 1: "grey", 2: "white"}
 COLOR = {0: "blue", 1: "red", 2: "white", 3: "yellow", 6: "blue", 7: "red"}

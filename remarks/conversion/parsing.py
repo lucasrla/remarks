@@ -2,9 +2,11 @@ import struct
 
 import shapely.geometry as geom  # Shapely
 
-# reMarkable defaults
-RM_WIDTH = 1404
-RM_HEIGHT = 1872
+from ..utils import (
+    RM_WIDTH,
+    RM_HEIGHT,
+)
+
 
 # reMarkable tools
 # http://web.archive.org/web/20190806120447/https://support.remarkable.com/hc/en-us/articles/115004558545-5-1-Tools-Overview
@@ -27,40 +29,6 @@ RM_TOOLS = {
     18: "Highlighter",
     21: "CalligraphyPen",
 }
-
-
-def get_adjusted_page_dims(page_width, page_height, scale):
-    if (page_width / page_height) >= (RM_WIDTH / RM_HEIGHT):
-        adj_w = RM_WIDTH * scale  # "perfect" fitting, no gap
-        adj_h = page_height
-    else:
-        adj_w = page_width
-        adj_h = RM_HEIGHT * scale  # "perfect" fitting, no gap
-
-    return adj_w, adj_h
-
-
-def get_rescaled_device_dims(scale):
-    return RM_WIDTH * scale, RM_HEIGHT * scale
-
-
-def get_page_to_device_ratio(doc_width, doc_height):
-    doc_aspect_ratio = doc_width / doc_height
-    device_aspect_ratio = RM_WIDTH / RM_HEIGHT
-
-    # If doc page is wider than reMarkable's aspect ratio,
-    # use doc_width as reference for the scale ratio.
-    # There should be no "leftover" (gap) on the horizontal
-    if doc_aspect_ratio >= device_aspect_ratio:
-        scale = doc_width / RM_WIDTH
-
-    # PDF page is narrower than reMarkable's a/r,
-    # use pdf_height as reference for the scale ratio.
-    # There should be no "leftover" (gap) on the vertical
-    else:
-        scale = doc_height / RM_HEIGHT
-
-    return scale
 
 
 # TODO: Review stroke-width and opacity for all tools
@@ -262,6 +230,8 @@ def get_ann_max_bound(parsed_data):
                     line = geom.LineString([(float(p[0]), float(p[1])) for p in points])
                     collection.append(line)
 
-    (minx, miny, maxx, maxy) = geom.MultiLineString(collection).bounds
-
-    return (maxx, maxy)
+    if len(collection) > 0:
+        (minx, miny, maxx, maxy) = geom.MultiLineString(collection).bounds
+        return (maxx, maxy)
+    else:
+        return (0, 0)
