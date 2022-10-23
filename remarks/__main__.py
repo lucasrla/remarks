@@ -33,12 +33,6 @@ def main():
         metavar="ANNOTATION_TYPE",
     )
     parser.add_argument(
-        "--hl_md_format",
-        help="Choose how highlighted text should be written in Markdown. Options are: bullet_points or whole_block. Defaults to whole_block",
-        default="whole_block",
-        metavar="HIGHLIGHTS_FORMATTING",
-    )
-    parser.add_argument(
         "--skip_combined_pdf",
         dest="combined_pdf",
         action="store_false",
@@ -55,6 +49,26 @@ def main():
         dest="modified_pdf",
         action="store_true",
         help="Create a '*_remarks-only.pdf' file with annotated pages only (unannotated ones will be out)",
+    )
+    parser.add_argument(
+        "--md_hl_format",
+        help="Choose how highlighted text should be written in Markdown. Options are: bullet_points or whole_block. Defaults to whole_block",
+        default="whole_block",
+        metavar="HIGHLIGHTS_FORMAT",
+    )
+    parser.add_argument(
+        "--md_page_offset",
+        help="For page headers in Markdown files, offset their value by PAGE_OFFSET. This is useful for citations. Defaults to 0",
+        default=0,
+        type=int,
+        metavar="PAGE_OFFSET",
+    )
+    parser.add_argument(
+        "--md_header_format",
+        dest="md_header_format",
+        default="atx",
+        help="For Markdown files, use either atx headers (# Heading 1; ## Heading 2) or setex (dashes under a header title). Defaults to atx",
+        metavar="HEADER_FORMAT",
     )
     parser.add_argument(
         "--per_page_targets",

@@ -1,3 +1,5 @@
+import logging
+
 import fitz  # PyMuPDF
 import shapely.geometry as geom  # Shapely
 
@@ -111,18 +113,28 @@ def draw_annotations_on_pdf(data, page, color=True, inplace=False):
         if seg_type == "Highlighter":
             # print("seg_data:", seg_data)
 
-            for seg_rect in seg_data["rects"]:
-                # print("seg_rect:", seg_rect)
+            # If there are multiple rectangles per segment, do not want to
+            # loop over them. Instead, just send them all to addHighlightAnnot.
+            # It can handle a list of rectangles and will join them into one
+            # annotation.
 
+            # Sometimes small highlights will not be valid. If so, just print
+            # a warning and carry on
+            try:
                 # https://pymupdf.readthedocs.io/en/latest/recipes-annotations.html#how-to-add-and-modify-annotations
-                # annot = page.add_highlight_annot(seg_rect)
-                page.add_highlight_annot(seg_rect)
-                # annot.update()
+                annot = page.add_highlight_annot(seg_data["rects"])
+                annot.set_border(width=seg_data["stroke-width"])
+                annot.update()
 
                 # print("annot.rect:", annot.rect)
                 # print("annot.border:", annot.border)
                 # print("annot.opacity:", annot.opacity)
                 # print("annot.colors:", annot.colors)
+
+            except Exception as e:
+                logging.warning(
+                    f"- Just ran into an exception while adding a highlight. It probably happened because of a small highlight that PyMuPDF couldn't handle well enough: {e}"
+                )
 
         # Scribbles
         else:

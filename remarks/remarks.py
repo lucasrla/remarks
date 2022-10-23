@@ -102,8 +102,10 @@ def process_document(
     modified_pdf=False,
     combined_md=False,
     assume_malformed_pdfs=False,
-    hl_md_format="whole_block",
     avoid_ocr=False,
+    md_hl_format="whole_block",
+    md_page_offset=0,
+    md_header_format="atx",
 ):
     pages_list, pages_map = get_pages_data(metadata_path)
 
@@ -316,7 +318,7 @@ def process_document(
             ann_hl_text = extract_text_from_pdf_annotations(
                 ann_page,
                 malformed=assume_malformed_pdfs,
-                md_format=hl_md_format,
+                presentation=md_hl_format,
             )
         elif "highlights" in ann_type and has_ann_hl and doc_type == "pdf":
             logging.info(
@@ -329,10 +331,13 @@ def process_document(
             ann_page = add_smart_highlight_annotations(smart_hl_data, ann_page)
             smart_hl_text = extract_text_from_smart_highlights(
                 smart_hl_data,
-                md_format=hl_md_format,
+                presentation=md_hl_format,
             )
 
-        hl_text = smart_hl_text + "\n\n" + ann_hl_text
+        if len(ann_hl_text) > 0:
+            hl_text = smart_hl_text + "\n\n" + ann_hl_text
+        else:
+            hl_text = smart_hl_text
 
         if per_page_targets:
             if "pdf" in per_page_targets:
@@ -368,7 +373,7 @@ def process_document(
             pages_order.append(page_idx)
 
         if combined_md and (has_ann_hl or has_smart_hl):
-            combined_md_strs += [(page_idx, hl_text + "\n")]
+            combined_md_strs += [(page_idx + md_page_offset, hl_text + "\n")]
 
         # If there are annotations outside the original page limits
         # or if the PDF has been OCRed by us, insert the annotated page
@@ -418,10 +423,18 @@ def process_document(
 
     if combined_md and len(combined_md_strs) > 0:
         combined_md_strs = sorted(combined_md_strs, key=lambda t: t[0])
-        combined_md_str = "".join(
-            [f"\nPage {s[0]}\n--------\n" + s[1] for s in combined_md_strs]
-        )
-        combined_md_str = f"{out_path.stem}\n========\n" + combined_md_str
+
+        if md_header_format == "atx":
+            combined_md_str = "".join(
+                [f"\n## Page {s[0]}\n\n" + s[1] for s in combined_md_strs]
+            )
+            combined_md_str = f"# {out_path.stem}\n" + combined_md_str
+
+        elif md_header_format == "setex":
+            combined_md_str = "".join(
+                [f"\nPage {s[0]}\n--------\n" + s[1] for s in combined_md_strs]
+            )
+            combined_md_str = f"{out_path.stem}\n========\n" + combined_md_str
 
         with open(f"{out_doc_path_str} _highlights.md", "w") as f:
             f.write(combined_md_str)
