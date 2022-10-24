@@ -5,7 +5,7 @@ import argparse
 from remarks import run_remarks
 
 __prog_name__ = "remarks"
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 
 def main():
