@@ -12,8 +12,9 @@ from .conversion.parsing import (
 )
 from .conversion.text import (
     check_if_text_extractable,
-    extract_text_from_pdf_annotations,
-    extract_text_from_smart_highlights,
+    extract_groups_from_pdf_ann_hl,
+    extract_groups_from_smart_hl,
+    prepare_md_from_hl_groups,
 )
 from .conversion.ocrmypdf import (
     is_executable_available,
@@ -251,7 +252,8 @@ def process_document(
         # "show_pdf_page" from an empty (blank) page
         # - https://github.com/pymupdf/PyMuPDF/blob/9d2af43230f6d9944734320813acc79abe95d514/fitz/utils.py#L185-L186
         if len(pdf_src[page_idx].get_contents()) != 0:
-            # Resize content of original page and copy it to page to be annoated
+            # Resize content of original page and copy it to the page that will
+            # be annotated
             ann_page.show_pdf_page(pdf_src_page_rect, pdf_src, pno=page_idx)
 
             # `show_pdf_page()` works as a way to copy and resize content from
@@ -309,35 +311,35 @@ def process_document(
 
         # TODO: add ability to extract highlighted images / tables (via pixmaps)?
 
-        ann_hl_text = ""
+        ann_hl_groups = []
         if (
             "highlights" in ann_type
             and has_ann_hl
             and (is_text_extractable or is_ocred)
         ):
-            ann_hl_text = extract_text_from_pdf_annotations(
+            ann_hl_groups = extract_groups_from_pdf_ann_hl(
                 ann_page,
                 malformed=assume_malformed_pdfs,
-                presentation=md_hl_format,
             )
         elif "highlights" in ann_type and has_ann_hl and doc_type == "pdf":
             logging.info(
                 f"- Found highlights on page #{page_idx} but couldn't extract them to Markdown. Maybe run it through OCRmyPDF next time?"
             )
 
-        smart_hl_text = ""
+        smart_hl_groups = []
         if "highlights" in ann_type and has_smart_hl:
             smart_hl_data = load_json_file(hl_json_file)
             ann_page = add_smart_highlight_annotations(smart_hl_data, ann_page)
-            smart_hl_text = extract_text_from_smart_highlights(
-                smart_hl_data,
+            smart_hl_groups = extract_groups_from_smart_hl(smart_hl_data)
+
+        hl_text = ""
+        if len(ann_hl_groups + smart_hl_groups) > 0:
+            hl_text = prepare_md_from_hl_groups(
+                ann_page,
+                ann_hl_groups,
+                smart_hl_groups,
                 presentation=md_hl_format,
             )
-
-        if len(ann_hl_text) > 0:
-            hl_text = smart_hl_text + "\n\n" + ann_hl_text
-        else:
-            hl_text = smart_hl_text
 
         if per_page_targets:
             if "pdf" in per_page_targets:
@@ -409,7 +411,7 @@ def process_document(
 
     if modified_pdf and (doc_type == "notebook" and combined_pdf):
         logging.info(
-            "- You asked for the modified PDF, but we won't bother generated it for this notebook. It would be the same as the combined PDF, which you're already getting."
+            "- You asked for the modified PDF, but we won't bother generated it for this notebook. It would be the same as the combined PDF, which you're already getting"
         )
     elif modified_pdf:
         pages_order = sorted(

@@ -1,4 +1,4 @@
-from itertools import groupby, pairwise
+from itertools import groupby
 import operator
 
 import fitz
@@ -101,11 +101,7 @@ def get_page_text_tuples(
         return tuples_list
 
 
-def extract_text_from_pdf_annotations(
-    page,
-    malformed=False,
-    presentation="whole_block",
-):
+def extract_groups_from_pdf_ann_hl(page, malformed=False):
     # https://pymupdf.readthedocs.io/en/latest/recipes-text.html#how-to-extract-text-from-within-a-rectangle
     # https://github.com/pymupdf/PyMuPDF-Utilities/tree/master/textbox-extraction
     # https://github.com/benlongo/remarkable-highlights/blob/0608dea6ba1f5ce46c540e623c55649f8f918b5c/remarkable_highlights/extract.py#L131
@@ -154,7 +150,7 @@ def extract_text_from_pdf_annotations(
         if len(curr_group) > 0:
             hl_word_groups.append(curr_group)
 
-        # print("hl_word_groups:", hl_word_groups)
+    # print("hl_word_groups:", hl_word_groups)
 
     # If malformed
     else:
@@ -183,11 +179,71 @@ def extract_text_from_pdf_annotations(
         for y1, hl_word_tuple in hl_words_grouped_by_line:
             hl_word_groups.append([w[4] for w in hl_word_tuple])
 
-        # print("hl_word_groups:", hl_word_groups)
+    # print("hl_word_groups:", hl_word_groups)
+    return hl_word_groups
+
+
+def extract_groups_from_smart_hl(hl_data):
+    hl_list = hl_data["highlights"][0]
+
+    # Sorting is needed because highlights are added to list according to
+    # "timestamp", not necessarily natural order
+    sorted_hl_list = sorted(hl_list, key=operator.itemgetter("start"))
+
+    # Create a new key for easier iteration over highlights.
+    # `start` and `length` seem to be character-based counts
+    for hl in sorted_hl_list:
+        hl["end"] = hl["start"] + hl["length"]
+
+    curr_group = []
+    hl_word_groups = []
+
+    for i, hl in enumerate(sorted_hl_list):
+        curr_group.append(hl["text"])
+        # print("curr_group:", curr_group)
+
+        # Number of characters to act as a tolerance between groups
+        gap = 2
+
+        # This is not the last item
+        if (i + 1) < len(sorted_hl_list):
+            hl_next = sorted_hl_list[i + 1]
+
+            # Is the next highlight fully "contained" within the current one?
+            curr_contains_next = (
+                hl["end"] > hl_next["start"] and hl["end"] > hl_next["end"]
+            )
+
+            # Start a new group to split highlights apart if either the
+            # (current highlight + gap) ends before the next one OR the current
+            # highlight fully contains the next one
+            if hl["end"] + gap < hl_next["start"] or curr_contains_next:
+                hl_word_groups.append(curr_group)
+                curr_group = []
+                # print("smart_hl_word_groups:", hl_word_groups)
+
+        # For the last one
+        else:
+            hl_word_groups.append(curr_group)
+
+    # print("smart_hl_word_groups:", hl_word_groups)
+    return hl_word_groups
+
+
+def prepare_md_from_hl_groups(
+    page,
+    ann_hl_groups,
+    smart_hl_groups,
+    presentation="whole_block",
+):
+    hl_word_groups = ann_hl_groups + smart_hl_groups
+    # print("hl_word_groups", hl_word_groups)
 
     if presentation == "whole_block":
+        # TODO: Should we avoid sorting here if PDF is well-formed? Need some
+        # ugly documents to dig deeper and test this out...
         text_blocks_list = get_page_text_tuples(
-            page, option="blocks", sort=is_sort_needed, text_only=True
+            page, option="blocks", sort=True, text_only=True
         )
         # print("text_blocks_list:", text_blocks_list)
 
@@ -213,8 +269,8 @@ def extract_text_from_pdf_annotations(
                     has_highlight = True
                     already_matched.append(hl_group)
 
+            # TODO: Are these quick fixes for consecutive mark still necessary?
             if has_highlight:
-                # Quick fixes for consecutive <mark>s
                 md_str = md_str.replace("</mark>\n<mark>", " ")
                 md_str = md_str.replace("</mark> <mark>", " ")
                 md_blocks_with_marks.append(md_str)
@@ -234,58 +290,10 @@ def extract_text_from_pdf_annotations(
 
     elif presentation == "bullet_points":
         hl_word_groups = ["- " + " ".join(group) for group in hl_word_groups]
+
         return "\n".join(hl_word_groups)
 
     else:
         raise ValueError(
             "Invalid formatting for Markdown. Check your `--hl_md_format` flag"
-        )
-
-
-def extract_text_from_smart_highlights(
-    hl_data,
-    presentation="whole_block",
-):
-    hl_list = hl_data["highlights"][0]
-
-    # Sorting is needed because highlights are added to list according to
-    # "timestamp", not necessarily natural order
-    sorted_hl_list = sorted(hl_list, key=operator.itemgetter("start"))
-
-    curr_group = []
-    hl_word_groups = []
-
-    for hl, hl_next in pairwise(sorted_hl_list):
-        # print("hl, hl_next:", hl, hl_next)
-
-        curr_group.append(hl["text"])
-
-        # `start` and `length` seems to be character-based counts
-        hl_end = hl["start"] + hl["length"]
-        num_chars_tolerance = 2
-
-        # If current highlight ends before the next one (with some tolerance),
-        # assume they should belong to different "groups"
-        if hl_end + num_chars_tolerance < hl_next["start"]:
-            hl_word_groups.append(curr_group)
-            curr_group = []
-
-    # Add the last highlight, because of how itertools.pairwise behaves we'd
-    # miss it
-    curr_group.append(sorted_hl_list[-1]["text"])
-    hl_word_groups.append(curr_group)
-
-    # print("smart_hl_word_groups:", hl_word_groups)
-
-    if presentation == "whole_block":
-        hl_word_groups = [" ".join(group) for group in hl_word_groups]
-        return "\n\n".join(hl_word_groups)
-
-    elif presentation == "bullet_points":
-        hl_word_groups = ["- " + " ".join(group) for group in hl_word_groups]
-        return "\n".join(hl_word_groups)
-
-    else:
-        raise ValueError(
-            "Invalid formatting for Markdown. Check your `--md_hl_format` flag"
         )
