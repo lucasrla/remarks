@@ -11,3 +11,5 @@ TODOs.md
 demo/
 # except for our public demo
 !demo/on-computable-numbers/xochitl/
+
+tests/out/*
