@@ -2,7 +2,7 @@ import remarks
 import os
 
 
-def test_can_process_on_computable_numbers():
+def test_can_process_demo_with_default_args():
     initial_args = {
         'file_name': None,
         'ann_type': ['scribbles', 'highlights'],
