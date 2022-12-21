@@ -11,7 +11,7 @@ Note that `remarks` not only is highly experimental, it is _very likely to break
 Most of the actual heavy lifting has been done by the open source community and PyMuPDF. See [Credits and Acknowledgements](#credits-and-acknowledgements).
 
 
-# Some use cases
+## Some use cases
 
 - **In: PDF highlighted on reMarkable → Out: PDF with parseable highlights**  
 Someone who highlights lots of PDFs (e.g., researchers, academics, etc) can export their highlights for processing with a reference management tool, like [Zotero](https://www.zotero.org) [[#2](https://github.com/lucasrla/remarks/issues/2#issuecomment-732166093)].
@@ -23,7 +23,7 @@ Infovores of the world can export highlighted text to [Markdown](https://en.wiki
 Sometimes having just the textual content is not enough, sometimes you need the actual (visual) context around your annotation. To help you in such situations, `remarks` can export each annotated PDF page to a [PNG](https://en.wikipedia.org/wiki/Portable_Network_Graphics) image file. Images can be easily uploaded or embedded anywhere, from personal websites to "tools for networked thought".
 
 
-# A visual example
+## A visual example
 
 Highlight and annotate PDFs with your Marker on your reMarkable tablet: 
 
@@ -43,7 +43,7 @@ And then use `remarks` to export annotated pages to `Markdown`, `PDF`, `PNG`, or
 > <mark>the memory of My</mark> <mark>Parents</mark>
 
 
-# Compatibility and dependencies
+## Compatibility and dependencies
 
 Because `remarks` depends only on [PyMuPDF](https://github.com/pymupdf/PyMuPDF) and [Shapely](https://github.com/shapely/shapely), there is no need to install `imagemagick`, `opencv`, or any additional image library. Both PyMuPDF and Shapely have [pre-built](https://pypi.org/project/PyMuPDF/#files) [wheels](https://pypi.org/project/Shapely/#files) for several platforms (macOS, Linux, Windows) and recent Python 3 versions, so installing them should be smooth and easy for most people.
 
@@ -57,11 +57,11 @@ Incidentally, help the community keeping track of `remarks` compatibility across
 If [OCRmyPDF](https://github.com/ocrmypdf/OCRmyPDF) is available on your computer, `remarks` may (optionally) use it to OCR PDFs before extracting their highlighted text.
 
 
-# Setup
+## Setup
 
 To get `remarks` up and running on your local machine, follow the instructions below:
 
-## 1. Copy reMarkable's "raw" document files to your computer
+### 1. Copy reMarkable's "raw" document files to your computer
 
 In order to reconstruct your highlights and annotations, `remarks` relies on specific files that are created by the reMarkable device as you use it. Because these specific files are internal to the reMarkable device, first we need to transfer them to your computer.
 
@@ -79,7 +79,7 @@ There are several options for getting them to your computer. Find below some sug
 - **Use [@juruen/rmapi](https://github.com/juruen/rmapi) or [@subutux/rmapy](https://github.com/subutux/rmapy)**  
   Both are free and open source software that allow you to access your reMarkable tablet files through reMarkable's cloud service.
 
-## 2. Clone this repository and install the dependencies
+### 2. Clone this repository and install the dependencies
 
 > **⚠️ Users on Apple Silicon Macs (M1, M1 Pro, M2, etc):**  
 > - You must install `swig` and `freetype` via `brew` before running `poetry install` (see below)
@@ -110,7 +110,7 @@ poetry install
 ```
 
 
-# Usage and Demo
+## Usage and Demo
 
 Run `remarks` and check out what arguments are available:
 
@@ -141,7 +141,7 @@ python -m remarks ~/backups/remarkable/xochitl/ example_2/ --per_page_targets pn
 ```
 
 
-# Credits and Acknowledgements
+## Credits and Acknowledgements
 
 - [@JorjMcKie](https://github.com/JorjMcKie) who wrote and maintains the great [PyMuPDF](https://github.com/pymupdf/PyMuPDF)
 
@@ -161,13 +161,18 @@ python -m remarks ~/backups/remarkable/xochitl/ example_2/ --per_page_targets pn
 
 For more reMarkable resources, check out [awesome-reMarkable](https://github.com/reHackable/awesome-reMarkable) and [remarkablewiki.com](https://remarkablewiki.com/).
 
+## Running tests
 
-# License
+Run `pytest` in the root directory of the project after installing the dependencies using poetry.
+
+This will create files in the `tests/out` directory. The contents of this directory can safely be deleted.
+
+## License
 
 `remarks` is [Free Software](https://www.gnu.org/philosophy/free-sw.html) distributed under the [GNU General Public License v3.0](https://choosealicense.com/licenses/gpl-3.0/).
 
 
-# Disclaimers
+## Disclaimers
 
 This is a hobby project of an enthusiastic reMarkable user. There is no warranty whatsoever. Use it at your own risk.
 
