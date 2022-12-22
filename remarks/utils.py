@@ -1,5 +1,6 @@
 import json
 import pathlib
+from functools import cache
 
 
 # reMarkable's device dimensions
@@ -7,6 +8,7 @@ RM_WIDTH = 1404
 RM_HEIGHT = 1872
 
 
+@cache
 def read_meta_file(path, suffix=".metadata"):
     file = path.with_name(f"{path.stem}{suffix}")
     if not file.exists():
