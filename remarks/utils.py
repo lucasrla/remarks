@@ -63,6 +63,8 @@ def get_pages_data(path):
     content = read_meta_file(path, suffix=".content")
     if "redirectionPageMap" in content:
         return content["pages"], content["redirectionPageMap"]
+    if "cPages" in content:
+        return [page["id"] for page in content["cPages"]["pages"]], []
     return content["pages"], []
 
 

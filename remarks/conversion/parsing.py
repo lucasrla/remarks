@@ -111,6 +111,7 @@ def parse_rm_file(file_path, dims={"x": RM_WIDTH, "y": RM_HEIGHT}):
 
     expected_header_v3 = b"reMarkable .lines file, version=3          "
     expected_header_v5 = b"reMarkable .lines file, version=5          "
+    expected_header_v6 = b"reMarkable .lines file, version=6          "
     if len(data) < len(expected_header_v5) + 4:
         raise ValueError(f"{file_path} is too short to be a valid .rm file")
 
@@ -124,8 +125,9 @@ def parse_rm_file(file_path, dims={"x": RM_WIDTH, "y": RM_HEIGHT}):
 
     is_v3 = header == expected_header_v3
     is_v5 = header == expected_header_v5
+    is_v6 = header == expected_header_v6
 
-    if (not is_v3 and not is_v5) or nlayers < 1:
+    if (not is_v3 and not is_v5 and not is_v6) or nlayers < 1:
         raise ValueError(
             f"{file_path} is not a valid .rm file: <header={header}><nlayers={nlayers}>"
         )
