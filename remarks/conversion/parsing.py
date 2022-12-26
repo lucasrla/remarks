@@ -138,6 +138,8 @@ def parse_rm_file(file_path, dims={"x": RM_WIDTH, "y": RM_HEIGHT}):
     has_highlighter = False
 
     for _ in range(nlayers):
+        if is_v6:
+            continue
         fmt = "<I"
         (nstrokes,) = struct.unpack_from(fmt, data, offset)
         offset += struct.calcsize(fmt)
