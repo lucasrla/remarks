@@ -122,21 +122,18 @@ def process_document(
 
     if ann_type == "scribbles" and len(ann_rm_files) == 0:
         logging.info(
-            "- You asked for scribbles, but we couldn't find any of those on this document. Will skip this one"
+            "- scribbles were requested, no scribbles were found in this document."
         )
-        return
 
     if ann_type == "highlights" and len(hl_json_files) == 0 and len(ann_rm_files) == 0:
         logging.info(
-            "- You asked for highlights, but we couldn't find anything highlighted on this document. Will skip this one"
+            "- highlights were requested, no highlights were found in this document"
         )
-        return
 
     if len(hl_json_files) == 0 and len(ann_rm_files) == 0:
         logging.info(
-            "- Found nothing annotated on this document (no scribbles, no highlights). Will skip this one"
+            "- Found no highlights nor scribbles in this document"
         )
-        return
 
     if combined_md:
         combined_md_strs = []
