@@ -246,6 +246,9 @@ def get_ann_max_bound(parsed_data):
         for _, st_value in strokes["strokes"].items():
             for _, sg_value in enumerate(st_value["segments"]):
                 for points in sg_value["points"]:
+                    if len(points) <= 1:
+                        # line needs at least two points, see testcase v2_notebook_complex
+                        continue
                     line = geom.LineString([(float(p[0]), float(p[1])) for p in points])
                     collection.append(line)
 
