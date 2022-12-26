@@ -96,6 +96,9 @@ def prepare_segments(data):
                     points = []
                     for p in segment:
                         points.append((float(p[0]), float(p[1])))
+                    if len(points) <= 1:
+                        # line needs at least two points, see testcase v2_notebook_complex
+                        continue
 
                     segs[name]["points"].append(points)
                     line = geom.LineString(points)
