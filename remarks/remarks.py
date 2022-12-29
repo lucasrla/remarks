@@ -78,7 +78,6 @@ def run_remarks(input_dir, output_dir, file_name=None, **kwargs):
 
             in_device_dir = get_ui_path(metadata_path)
             out_path = pathlib.Path(f"{output_dir}/{in_device_dir}/{doc_name}/")
-            out_path.mkdir(parents=True, exist_ok=True)
             # print("out_path:", out_path)
 
             process_document(metadata_path, out_path, doc_type, **kwargs)
@@ -342,6 +341,7 @@ def process_document(
             )
 
         if per_page_targets:
+            out_path.mkdir(parents=True, exist_ok=True)
             if "pdf" in per_page_targets:
                 subdir = prepare_subdir(out_path, "pdf")
                 work_doc.save(f"{subdir}/{page_idx:0{pages_magnitude}}.pdf")
