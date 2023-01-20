@@ -64,7 +64,7 @@ def get_pages_data(path):
     if "redirectionPageMap" in content:
         return content["pages"], content["redirectionPageMap"]
     if "cPages" in content:
-        return [page["id"] for page in content["cPages"]["pages"]], []
+        return [page["id"] for page in content["cPages"]["pages"] if not page.get("deleted", {"value": 0})["value"] == 1], []
     return content["pages"], []
 
 
