@@ -7,7 +7,6 @@ from ..utils import (
     RM_HEIGHT,
 )
 
-
 # reMarkable tools
 # http://web.archive.org/web/20190806120447/https://support.remarkable.com/hc/en-us/articles/115004558545-5-1-Tools-Overview
 RM_TOOLS = {
@@ -104,7 +103,17 @@ def create_seg_dict(opacity, stroke_width, cc):
     return sg
 
 
-def parse_rm_file(file_path, dims={"x": RM_WIDTH, "y": RM_HEIGHT}):
+def parse_v6():
+    output = {
+        "layers": []
+    }
+
+    return output, False
+
+
+def parse_rm_file(file_path, dims={
+    "x": RM_WIDTH,
+    "y": RM_HEIGHT}):
     with open(file_path, "rb") as f:
         data = f.read()
     # print("data:", data)
@@ -127,19 +136,22 @@ def parse_rm_file(file_path, dims={"x": RM_WIDTH, "y": RM_HEIGHT}):
     is_v5 = header == expected_header_v5
     is_v6 = header == expected_header_v6
 
-    if (not is_v3 and not is_v5 and not is_v6) or nlayers < 1:
-        raise ValueError(
-            f"{file_path} is not a valid .rm file: <header={header}><nlayers={nlayers}>"
-        )
+    if is_v3 or is_v5:
+        return parse_v3_to_v5(data, dims, is_v3, is_v5, nlayers, offset)
 
+    if is_v6:
+        return parse_v6()
+
+    raise ValueError(
+        f"{file_path} is not a valid .rm file: <header={header}><nlayers={nlayers}>"
+    )
+
+
+def parse_v3_to_v5(data, dims, is_v3, is_v5, nlayers, offset):
     output = {}
     output["layers"] = []
-
     has_highlighter = False
-
     for _ in range(nlayers):
-        if is_v6:
-            continue
         fmt = "<I"
         (nstrokes,) = struct.unpack_from(fmt, data, offset)
         offset += struct.calcsize(fmt)
@@ -184,7 +196,6 @@ def parse_rm_file(file_path, dims={"x": RM_WIDTH, "y": RM_HEIGHT}):
             l["strokes"][tool]["segments"].append(sg)
 
         output["layers"].append(l)
-
     return output, has_highlighter
 
 
