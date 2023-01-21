@@ -114,25 +114,19 @@ def update_boundaries_from_point(x, y, boundaries):
 
 def parse_v6(file_path):
     output = {
-        "layers": []
+        "layers": [
+            {
+                "strokes": {}
+            }
+        ]
     }
-
-    layer_ids = {}
 
     dims = determine_document_dimensions(file_path)
 
     with open(file_path, "rb") as f:
         for el in read_blocks(f):
             if isinstance(el, SceneLineItemBlock):
-                if el.parent_id in layer_ids:
-                    layer_idx = layer_ids[el.parent_id]
-                    layer = output["layers"][layer_idx]
-                else:
-                    layer_ids[el.parent_id] = len(output["layers"])
-                    layer = {
-                        "strokes": {}
-                    }
-                    output['layers'].append(layer)
+                layer = output["layers"][0]
 
                 if el.value is None:
                     break
@@ -178,7 +172,6 @@ def determine_document_dimensions(file_path):
             if isinstance(el, SceneLineItemBlock):
                 if el.value is not None:
                     for p in el.value.points:
-                        print(p.x + 702, p.y)
                         update_boundaries_from_point(p.x, p.y, dims)
             elif isinstance(el, RootTextBlock):
                 update_boundaries_from_point(el.pos_x, el.pos_y, dims)
