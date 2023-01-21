@@ -1,6 +1,8 @@
+import math
 import struct
 
 import shapely.geometry as geom  # Shapely
+from rmscene import read_blocks, SceneLineItemBlock, RootTextBlock
 
 from ..utils import (
     RM_WIDTH,
@@ -103,20 +105,97 @@ def create_seg_dict(opacity, stroke_width, cc):
     return sg
 
 
-def parse_v6():
+def update_boundaries_from_point(x, y, boundaries):
+    boundaries["x_max"] = max(boundaries["x_max"], x)
+    boundaries["y_max"] = max(boundaries["y_max"], y)
+    boundaries["x_min"] = min(boundaries["x_min"], x)
+    boundaries["y_min"] = min(boundaries["y_min"], y)
+
+
+def parse_v6(file_path):
     output = {
         "layers": []
     }
 
+    layer_ids = {}
+
+    dims = determine_document_dimensions(file_path)
+
+    with open(file_path, "rb") as f:
+        for el in read_blocks(f):
+            if isinstance(el, SceneLineItemBlock):
+                if el.parent_id in layer_ids:
+                    layer_idx = layer_ids[el.parent_id]
+                    layer = output["layers"][layer_idx]
+                else:
+                    layer_ids[el.parent_id] = len(output["layers"])
+                    layer = {
+                        "strokes": {}
+                    }
+                    output['layers'].append(layer)
+
+                if el.value is None:
+                    break
+                pen = el.value.tool.value
+                color = el.value.color.value
+                opacity = 1
+                stroke_width = el.value.thickness_scale
+
+                tool, stroke_width, opacity = process_tool(pen, dims, stroke_width, opacity)
+                segment = create_seg_dict(opacity, stroke_width, color)
+                points_ = [(f"{p.x + RM_WIDTH / 2:.3f}", f"{p.y:.3f}") for p in el.value.points]
+                segment['points'].append(points_)
+                if tool not in layer["strokes"].keys():
+                    layer["strokes"] = update_stroke_dict(layer["strokes"], tool)
+                layer["strokes"][tool]["segments"].append(segment)
+
     return output, False
 
 
-def parse_rm_file(file_path, dims={
-    "x": RM_WIDTH,
-    "y": RM_HEIGHT}):
+def roundup(num, increment):
+    return int(math.ceil(num / increment)) * increment
+
+
+def rounddown(num, increment):
+    return int(math.floor(num / increment)) * increment
+
+
+def determine_document_dimensions(file_path):
+    """The ReMarkable has dynamic document size in v6. The dimensions are not available anywhere, so we'll compute
+    them from points"""
+    # This is the horizontal space you get as defined by ReMarkable.
+    # Not coincidentally, this is (RM_HEIGHT - RM_WIDTH)/2
+    # Adding two increments, which is the max, you end up with an exactly square aspect ratio
+    # hori = (RM_HEIGHT - RM_WIDTH) / 2
+    dims = {
+        "x_min": -RM_WIDTH / 2,
+        "x_max": RM_WIDTH / 2 - 1,
+        "y_min": 0,
+        "y_max": RM_HEIGHT - 1
+    }
+    with open(file_path, "rb") as f:
+        for el in read_blocks(f):
+            if isinstance(el, SceneLineItemBlock):
+                if el.value is not None:
+                    for p in el.value.points:
+                        print(p.x + 702, p.y)
+                        update_boundaries_from_point(p.x, p.y, dims)
+            elif isinstance(el, RootTextBlock):
+                update_boundaries_from_point(el.pos_x, el.pos_y, dims)
+
+    return {
+        "x": dims["x_max"] - dims["x_min"],
+        "y": dims["y_max"] - dims["y_min"]
+    }
+
+
+def parse_rm_file(file_path, dims=None):
+    if dims is None:
+        dims = {
+            "x": RM_WIDTH,
+            "y": RM_HEIGHT}
     with open(file_path, "rb") as f:
         data = f.read()
-    # print("data:", data)
 
     expected_header_v3 = b"reMarkable .lines file, version=3          "
     expected_header_v5 = b"reMarkable .lines file, version=5          "
@@ -128,7 +207,6 @@ def parse_rm_file(file_path, dims={
     fmt = f"<{len(expected_header_v5)}sI"
 
     header, nlayers = struct.unpack_from(fmt, data, offset)
-    # print("header, nlayers", header, nlayers)
 
     offset += struct.calcsize(fmt)
 
@@ -137,17 +215,17 @@ def parse_rm_file(file_path, dims={
     is_v6 = header == expected_header_v6
 
     if is_v3 or is_v5:
-        return parse_v3_to_v5(data, dims, is_v3, is_v5, nlayers, offset)
+        return parse_v3_to_v5(data, dims, is_v3, nlayers, offset)
 
     if is_v6:
-        return parse_v6()
+        return parse_v6(file_path)
 
     raise ValueError(
         f"{file_path} is not a valid .rm file: <header={header}><nlayers={nlayers}>"
     )
 
 
-def parse_v3_to_v5(data, dims, is_v3, is_v5, nlayers, offset):
+def parse_v3_to_v5(data, dims, is_v3, nlayers, offset):
     output = {}
     output["layers"] = []
     has_highlighter = False
@@ -165,7 +243,7 @@ def parse_v3_to_v5(data, dims, is_v3, is_v5, nlayers, offset):
                 # cc for color-code, w for stroke-width
                 pen, cc, _, w, nsegs = struct.unpack_from(fmt, data, offset)
                 offset += struct.calcsize(fmt)
-            if is_v5:
+            else:
                 fmt = "<IIIffI"
                 pen, cc, _, w, _, nsegs = struct.unpack_from(fmt, data, offset)
                 offset += struct.calcsize(fmt)

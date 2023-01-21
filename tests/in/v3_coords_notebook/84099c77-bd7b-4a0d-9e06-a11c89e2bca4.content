@@ -1,0 +1,160 @@
+{
+    "cPages": {
+        "lastOpened": {
+            "timestamp": "1:13",
+            "value": "34b966ca-f36d-4d44-91e9-8067580c728d"
+        },
+        "original": {
+            "timestamp": "0:0",
+            "value": -1
+        },
+        "pages": [
+            {
+                "id": "f397734a-15bf-4a69-894d-81b0e2ba50d1",
+                "idx": {
+                    "timestamp": "1:1",
+                    "value": "ba"
+                },
+                "scrollTime": {
+                    "timestamp": "1:5",
+                    "value": "2023-01-20T18:11:13Z"
+                },
+                "template": {
+                    "timestamp": "1:1",
+                    "value": "P Dots S"
+                },
+                "verticalScroll": {
+                    "timestamp": "1:5",
+                    "value": 1872
+                }
+            },
+            {
+                "id": "c5ae6db6-aa4a-4744-a43a-2f1928796449",
+                "idx": {
+                    "timestamp": "1:1",
+                    "value": "bb"
+                },
+                "scrollTime": {
+                    "timestamp": "1:1",
+                    "value": "2023-01-20T18:16:31Z"
+                },
+                "template": {
+                    "timestamp": "1:1",
+                    "value": "P Dots S"
+                },
+                "verticalScroll": {
+                    "timestamp": "1:1",
+                    "value": 1872
+                }
+            },
+            {
+                "id": "34b966ca-f36d-4d44-91e9-8067580c728d",
+                "idx": {
+                    "timestamp": "1:1",
+                    "value": "bc"
+                },
+                "scrollTime": {
+                    "timestamp": "1:1",
+                    "value": "2023-01-20T18:18:36Z"
+                },
+                "template": {
+                    "timestamp": "1:1",
+                    "value": "P Dots S"
+                },
+                "verticalScroll": {
+                    "timestamp": "1:1",
+                    "value": 1872
+                }
+            },
+            {
+                "deleted": {
+                    "timestamp": "1:1",
+                    "value": 1
+                },
+                "id": "89e383a5-b9b6-4568-814b-9023001dcdc4",
+                "idx": {
+                    "timestamp": "1:1",
+                    "value": "bb"
+                },
+                "scrollTime": {
+                    "timestamp": "1:2",
+                    "value": "2023-01-20T18:11:22Z"
+                },
+                "template": {
+                    "timestamp": "1:1",
+                    "value": "P Dots S"
+                },
+                "verticalScroll": {
+                    "timestamp": "1:2",
+                    "value": 1872
+                }
+            },
+            {
+                "deleted": {
+                    "timestamp": "1:1",
+                    "value": 1
+                },
+                "id": "9d492eda-595f-40cb-92e9-034cf44f9b9c",
+                "idx": {
+                    "timestamp": "1:1",
+                    "value": "bb"
+                },
+                "scrollTime": {
+                    "timestamp": "1:3",
+                    "value": "2023-01-20T18:10:53Z"
+                },
+                "template": {
+                    "timestamp": "1:1",
+                    "value": "P Dots S"
+                },
+                "verticalScroll": {
+                    "timestamp": "1:3",
+                    "value": 1872
+                }
+            }
+        ],
+        "uuids": [
+            {
+                "first": "a533ab32-689b-5e15-976d-4671496a1fc0",
+                "second": 1
+            }
+        ]
+    },
+    "coverPageNumber": -1,
+    "customZoomCenterX": 0,
+    "customZoomCenterY": 936,
+    "customZoomOrientation": "portrait",
+    "customZoomPageHeight": 1872,
+    "customZoomPageWidth": 1404,
+    "customZoomScale": 1,
+    "documentMetadata": {
+    },
+    "extraMetadata": {
+        "LastBallpointv2Color": "Red",
+        "LastBallpointv2Size": "2",
+        "LastEraserColor": "Black",
+        "LastEraserSize": "2",
+        "LastEraserTool": "Eraser",
+        "LastPaintbrushv2Color": "Gray",
+        "LastPaintbrushv2Size": "2",
+        "LastPen": "Ballpointv2",
+        "LastSelectionToolColor": "Black",
+        "LastSelectionToolSize": "2",
+        "LastTool": "Ballpointv2"
+    },
+    "fileType": "notebook",
+    "fontName": "",
+    "formatVersion": 2,
+    "lineHeight": -1,
+    "margins": 125,
+    "orientation": "portrait",
+    "pageCount": 3,
+    "pageTags": [
+    ],
+    "sizeInBytes": "94625",
+    "tags": [
+    ],
+    "textAlignment": "justify",
+    "textScale": 1,
+    "zoomMode": "bestFit"
+}

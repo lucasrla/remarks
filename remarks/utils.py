@@ -101,21 +101,19 @@ def rescale_given_device_aspect_ratio(page_dims):
     page_aspect_ratio = page_width / page_height
     device_aspect_ratio = RM_WIDTH / RM_HEIGHT
 
-    scale = 1
     page_width_rescaled = page_width
     page_height_rescaled = page_height
 
-    # If doc page is wider than reMarkable's aspect ratio,
-    # use doc_width as reference for the scale ratio.
-    # There should be no "leftover" (gap) on the horizontal
     if page_aspect_ratio >= device_aspect_ratio:
+        # If doc page is wider than reMarkable's aspect ratio,
+        # use doc_width as reference for the scale ratio.
+        # There should be no "leftover" (gap) on the horizontal
         scale = page_width / RM_WIDTH
         page_width_rescaled = RM_WIDTH * scale
-
-    # PDF page is narrower than reMarkable's a/r,
-    # use pdf_height as reference for the scale ratio.
-    # There should be no "leftover" (gap) on the vertical
     else:
+        # PDF page is narrower than reMarkable's a/r,
+        # use pdf_height as reference for the scale ratio.
+        # There should be no "leftover" (gap) on the vertical
         scale = page_height / RM_HEIGHT
         page_height_rescaled = RM_HEIGHT * scale
 

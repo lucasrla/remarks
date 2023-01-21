@@ -1,14 +1,16 @@
 import logging
 import math
 import pathlib
+import random
 import sys
+from pprint import pprint
 
 import fitz  # PyMuPDF
 
 from .conversion.parsing import (
     parse_rm_file,
     rescale_parsed_data,
-    get_ann_max_bound,
+    get_ann_max_bound, determine_document_dimensions,
 )
 from .conversion.text import (
     check_if_text_extractable,
@@ -142,15 +144,6 @@ def process_document(
         mod_pdf = fitz.open()
         pages_order = []
 
-    # PyMuPDF's A4 default is width=595, height=842
-    # - https://pymupdf.readthedocs.io/en/latest/document.html#Document.new_page
-    # The 0.42 below is just me eye-balling PyMuPDF's defaults:
-    # 1404*0.42 ~= 590 and 1872*0.4 ~= 786
-    #
-    # reMarkable's desktop app exports notebooks to PDF with 445 x 594, in
-    # terms of scale it is 445/1404 = ~0.316
-    note_page_dims = (RM_WIDTH * 0.42, RM_HEIGHT * 0.42)
-
     # Open the original PDF source document
     if doc_type in ["pdf", "epub"]:
         f = metadata_path.with_name(f"{metadata_path.stem}.pdf")
@@ -160,32 +153,38 @@ def process_document(
     # - https://github.com/lucasrla/remarks/issues/11#issuecomment-1287175782
     # - https://github.com/apoorvkh/remarks/blob/64dd3b586b96195b00e727fc1f1e537b90d841dc/remarks/remarks.py#L16-L38
     elif doc_type == "notebook":
+        # PyMuPDF's A4 default is width=595, height=842
+        # - https://pymupdf.readthedocs.io/en/latest/document.html#Document.new_page
+        # The 0.42 below is just me eye-balling PyMuPDF's defaults:
+        # 1404*0.42 ~= 590 and 1872*0.4 ~= 786
+        #
+        # reMarkable's desktop app exports notebooks to PDF with 445 x 594, in
+        # terms of scale it is 445/1404 = ~0.316
+        note_page_dims = (RM_WIDTH * 0.42, RM_HEIGHT * 0.42)
         # Open an empty PDF to be treated as if it were the original document
         pdf_src = fitz.open()
+        pages_map = []
+        for page in pages_list:
+            paths = filter(lambda _ann_page: _ann_page.stem == page, ann_rm_files)
+            path = next(paths, None)
+            if path:
+                try:
+                    dimensions = determine_document_dimensions(path)
+                    pages_map.append((-1, (dimensions["x"], dimensions["y"])))
+                except ValueError:
+                    pages_map.append((-1, note_page_dims))
+            else:
+                pages_map.append((-1, note_page_dims))
 
-        # Create its first page according to reMarkable device's aspect ratio
-        pdf_src.new_page(width=note_page_dims[0], height=note_page_dims[1])
-
-        # The mapped value of any first page is always `0`, any other note
-        # pages are always `-1` (including the ones inserted into PDF/EPUBs)
-        pages_map = [0] + [-1 for _ in range(len(pages_list) - 1)]
-
-    # print("pages_list, pages_map", pages_list, pages_map)
-
-    # If this is part of a notebook, use those arbitrary dimensions
-    if doc_type == "notebook":
-        blank_page_dims = note_page_dims
-    # If this is part of an actual PDF/EPUB, use dimensions of its first page
-    # (index=0)
-    else:
-        blank_page_dims = (pdf_src[0].rect.width, pdf_src[0].rect.height)
-
-    # For each note page, add a blank page to the original document
-    for i, page_idx in enumerate(pages_map):
-        if page_idx == -1:
+        # For each note page, add a blank page to the original document
+        for i, value in enumerate(pages_map):
+            if isinstance(value, int):
+                page_idx, dims = value, note_page_dims
+            else:
+                page_idx, dims = value
             pdf_src.new_page(
-                width=blank_page_dims[0],
-                height=blank_page_dims[1],
+                width=dims[0],
+                height=dims[1],
                 pno=i,
             )
 

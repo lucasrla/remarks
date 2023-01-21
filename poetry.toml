@@ -1,6 +1,3 @@
 [virtualenvs]
 create = true
 in-project = true
-
-[tool.poetry.dependencies]
-rmscene = { path = "../../../rmscene", develop = true }
