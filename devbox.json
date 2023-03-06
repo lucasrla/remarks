@@ -1,8 +1,12 @@
 {
   "packages": [
-    "python310"
+    "python310",
+    "poetry"
   ],
   "shell": {
     "init_hook": "PYTHONPATH=.venv/lib/python3.10/site-packages:$PYTHONPATH"
+  },
+  "nixpkgs": {
+    "commit": "f80ac848e3d6f0c12c52758c0f25c10c97ca3b62"
   }
 }
