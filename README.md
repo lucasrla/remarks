@@ -1,5 +1,7 @@
 # remarks
 
+> ⚠️ `remarks` does NOT work with reMarkable sofware >= 3.0 yet. [Follow issue #58 for updates](https://github.com/lucasrla/remarks/issues/58) ⚠️
+
 Extract annotations (text highlights and scribbles) and convert them to `Markdown`, `PDF`, `PNG`, and `SVG`. 
 
 `remarks` works with documents annotated on [reMarkable™ paper tablets](https://remarkable.com) &mdash; both 1st and 2nd generation &mdash; up to software version `2.15.0.1067`.
@@ -14,7 +16,7 @@ Most of the actual heavy lifting has been done by the open source community and 
 ## Some use cases
 
 - **In: PDF highlighted on reMarkable → Out: PDF with parseable highlights**  
-Someone who highlights lots of PDFs (e.g., researchers, academics, etc) can export their highlights for processing with a reference management tool, like [Zotero](https://www.zotero.org) [[#2](https://github.com/lucasrla/remarks/issues/2#issuecomment-732166093)].
+Someone who highlights lots of PDFs (e.g., researchers, academics, etc) can export their highlights for processing with a reference management tool, like [Zotero](https://www.zotero.org) (e.g., [issue #2](https://github.com/lucasrla/remarks/issues/2#issuecomment-732166093)).
 
 - **Extract highlighted text from PDF to Markdown**  
 Infovores of the world can export highlighted text to [Markdown](https://en.wikipedia.org/wiki/Markdown) and insert them into their preferred "tool for networked thought", like [Obsidian](https://obsidian.md/) or [Roam Research](https://roamresearch.com).
@@ -47,7 +49,7 @@ And then use `remarks` to export annotated pages to `Markdown`, `PDF`, `PNG`, or
 
 Because `remarks` depends only on [PyMuPDF](https://github.com/pymupdf/PyMuPDF) and [Shapely](https://github.com/shapely/shapely), there is no need to install `imagemagick`, `opencv`, or any additional image library. Both PyMuPDF and Shapely have [pre-built](https://pypi.org/project/PyMuPDF/#files) [wheels](https://pypi.org/project/Shapely/#files) for several platforms (macOS, Linux, Windows) and recent Python 3 versions, so installing them should be smooth and easy for most people.
 
-I currently use `remarks` with [reMarkable 1](https://remarkable.com/store/remarkable) and [reMarkable 2](https://remarkable.com/store/remarkable-2) tablets running software versions `2.14.3.1047` and `2.15.0.1067` on macOS Monterey (`12.6`) with CPython `3.10.x`. I don't have other equipment to test it thoroughly, but I expect `remarks` to work just fine in all common setups.
+I currently use `remarks` with [reMarkable 1](https://remarkable.com/store/remarkable) and [reMarkable 2](https://remarkable.com/store/remarkable-2) tablets running software versions `2.14.3.1047` and `2.15.0.1067` on macOS Ventura (`13.2.1`) with CPython `3.10.9`. I don't have other equipment to test it thoroughly, but I expect `remarks` to work just fine in all common setups.
 
 Incidentally, help the community keeping track of `remarks` compatibility across different setups:
 
@@ -67,9 +69,6 @@ In order to reconstruct your highlights and annotations, `remarks` relies on spe
 
 There are several options for getting them to your computer. Find below some suggestions. Choose whatever fits you:
 
-- **Copy from reMarkable's official desktop application**  
-  If you have a [reMarkable's official desktop app](https://support.remarkable.com/s/article/Desktop-app) installed, the files we need are already easily available on your computer. For macOS users, the files are located at `~/Library/Application\ Support/remarkable/desktop`. To avoid interfering with reMarkable's official app, copy and paste all the contents of `~/Library/Application\ Support/remarkable/desktop` to another directory (one that you can safely interact with – say, `~/Documents/remarkable/docs`).
-
 - **Use `rsync`** ([i](https://en.wikipedia.org/wiki/Rsync))  
   Check out the repository [@lucasrla/remarkable-utils](https://github.com/lucasrla/remarkable-utils) for the SSH & `rsync` setup I use (which includes automatic backups based on `cron`). 
 
@@ -79,10 +78,10 @@ There are several options for getting them to your computer. Find below some sug
 - **Use [@juruen/rmapi](https://github.com/juruen/rmapi) or [@subutux/rmapy](https://github.com/subutux/rmapy)**  
   Both are free and open source software that allow you to access your reMarkable tablet files through reMarkable's cloud service.
 
-### 2. Clone this repository and install the dependencies
+- **Copy from reMarkable's official desktop application**  
+  If you have a [reMarkable's official desktop app](https://support.remarkable.com/s/article/Desktop-app) installed, _most_ of the files we need are already easily available on your computer. For macOS users, the files are located at `~/Library/Application\ Support/remarkable/desktop`. To avoid interfering with reMarkable's official app, copy and paste all the contents of `~/Library/Application\ Support/remarkable/desktop` to another directory (one that you can safely interact with – say, `~/Documents/remarkable/docs`). Please note that this method won't allow you to use remarks' EPUB functionality. That's because this directory doesn't seem to include the [PDF files that reMarkable auto converts your EPUBs to](https://github.com/lucasrla/remarks/pull/34).
 
-> **⚠️ Users on Apple Silicon Macs (M1, M1 Pro, M2, etc):**  
-> - You must install `swig` and `freetype` via `brew` before running `poetry install` (see below)
+### 2. Clone this repository and install the dependencies
 
 ```sh
 ### 2.1 Clone
@@ -91,19 +90,11 @@ git clone https://github.com/lucasrla/remarks.git && cd remarks
 
 ### 2.2 Create and activate a virtual environment
 
-# If you're using poetry, a new virtual env should be created automatically (given our `poetry.toml`)
-# Any other popular alternative (e.g. virtualenv, virtualenvwrapper, etc) should work too
+# If you're using poetry, a new virtual env should be created automatically (as set forth in our `poetry.toml`)
+# But feel free to manage your virtual env needs with any of the alternatives (e.g. virtualenv, virtualenvwrapper, etc)
 
 
 ### 2.3 Install the dependencies
-
-# If you're on an Apple Silicon computer, you must run:
-# brew install swig freetype
-#
-# This is necessary because (as of October 2022) PyMuPDF does not provide pre-built macOS arm64 wheels
-# h/t: https://github.com/pymupdf/PyMuPDF/discussions/875#discussioncomment-3423026
-#
-# In case you don't have `brew` available, install it first: https://brew.sh/
 
 # Install dependencies with:
 poetry install
@@ -141,6 +132,13 @@ python -m remarks ~/backups/remarkable/xochitl/ example_2/ --per_page_targets pn
 ```
 
 
+## Tests
+
+Run `pytest` in the root directory of the project after installing the dependencies using `poetry`.
+
+This will create files in the `tests/out` directory. The contents of this directory can safely be deleted.
+
+
 ## Credits and Acknowledgements
 
 - [@JorjMcKie](https://github.com/JorjMcKie) who wrote and maintains the great [PyMuPDF](https://github.com/pymupdf/PyMuPDF)
@@ -161,11 +159,6 @@ python -m remarks ~/backups/remarkable/xochitl/ example_2/ --per_page_targets pn
 
 For more reMarkable resources, check out [awesome-reMarkable](https://github.com/reHackable/awesome-reMarkable) and [remarkablewiki.com](https://remarkablewiki.com/).
 
-## Running tests
-
-Run `pytest` in the root directory of the project after installing the dependencies using poetry.
-
-This will create files in the `tests/out` directory. The contents of this directory can safely be deleted.
 
 ## License
 

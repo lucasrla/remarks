@@ -137,9 +137,14 @@ def draw_annotations_on_pdf(data, page, inplace=False):
                 annot = page.add_highlight_annot(seg_data["rects"])
 
                 # Now supporting colors
-                color_array = fitz.utils.getColor(
-                    HL_COLOR_CODES[seg_data["color-code"]]
-                )
+                try:
+                    color_array = fitz.utils.getColor(
+                        HL_COLOR_CODES[seg_data["color-code"]]
+                    )
+                except KeyError:
+                    # Defaults to yellow if color hasn't been defined yet
+                    color_array = fitz.utils.getColor("yellow")
+
                 annot.set_colors(stroke=color_array)
 
                 annot.set_opacity(seg_data["opacity"])
@@ -186,7 +191,12 @@ def add_smart_highlight_annotations(hl_data, page, inplace=False):
         annot = page.add_highlight_annot(quads)
 
         # Support to colors
-        color_array = fitz.utils.getColor(HL_COLOR_CODES[hl["color"]])
+        try:
+            color_array = fitz.utils.getColor(HL_COLOR_CODES[hl["color"]])
+        except KeyError:
+            # Defaults to yellow if color hasn't been defined yet
+            color_array = fitz.utils.getColor("yellow")
+
         annot.set_colors(stroke=color_array)
 
         annot.update()
