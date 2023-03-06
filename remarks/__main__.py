@@ -34,7 +34,7 @@ def main():
     parser.add_argument(
         "--file_path",
         help="Work only on files whose (meaningful) path contains this string",
-        metavar="UUID_STRING",
+        metavar="FILEPATH_STRING",
     )
     parser.add_argument(
         "--ann_type",
