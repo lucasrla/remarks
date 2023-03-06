@@ -47,7 +47,7 @@ from .utils import (
 # - https://github.com/lucasrla/remarks/issues/11
 
 
-def run_remarks(input_dir, output_dir, file_name=None, **kwargs):
+def run_remarks(input_dir, output_dir, file_name=None, file_uuid=None, file_path=None, **kwargs):
     num_docs = sum(1 for _ in pathlib.Path(f"{input_dir}/").glob("*.metadata"))
 
     if num_docs == 0:
@@ -61,6 +61,9 @@ def run_remarks(input_dir, output_dir, file_name=None, **kwargs):
     )
 
     for metadata_path in pathlib.Path(f"{input_dir}/").glob("*.metadata"):
+        if metadata_path.stem != file_uuid:
+            continue
+
         if not is_document(metadata_path):
             continue
 
@@ -79,6 +82,9 @@ def run_remarks(input_dir, output_dir, file_name=None, **kwargs):
             in_device_dir = get_ui_path(metadata_path)
             out_path = pathlib.Path(f"{output_dir}/{in_device_dir}/{doc_name}/")
             # print("out_path:", out_path)
+
+            if file_path is not None and file_path not in str(in_device_dir):
+                continue
 
             process_document(metadata_path, out_path, doc_type, **kwargs)
         else:
