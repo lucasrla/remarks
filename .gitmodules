@@ -1,0 +1,3 @@
+[submodule "rmscene"]
+	path = rmscene
+	url = git@github.com:ricklupton/rmscene.git

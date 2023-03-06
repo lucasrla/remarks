@@ -294,6 +294,20 @@ tomli = {version = ">=1.0.0", markers = "python_version < \"3.11\""}
 testing = ["argcomplete", "hypothesis (>=3.56)", "mock", "nose", "pygments (>=2.7.2)", "requests", "xmlschema"]
 
 [[package]]
+name = "rmscene"
+version = "0.1.0"
+description = "Read v6 .rm files from the reMarkable tablet"
+category = "main"
+optional = false
+python-versions = "^3.10"
+files = []
+develop = true
+
+[package.source]
+type = "directory"
+url = "rmscene"
+
+[[package]]
 name = "shapely"
 version = "1.8.5.post1"
 description = "Geometric objects, predicates, and operations"
@@ -362,4 +376,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "6a2e73d395d9043375b2ceca4afa6b66231d2bbbab1bd3cd01c13352bbafdc3c"
+content-hash = "d65c40be536b78a333ae2f673bf3f04cceb838b9c1b33b46bd4be4a93b6522d5"

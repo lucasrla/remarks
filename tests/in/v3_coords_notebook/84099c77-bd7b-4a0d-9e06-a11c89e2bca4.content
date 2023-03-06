@@ -1,8 +1,8 @@
 {
     "cPages": {
         "lastOpened": {
-            "timestamp": "1:13",
-            "value": "34b966ca-f36d-4d44-91e9-8067580c728d"
+            "timestamp": "1:22",
+            "value": "0c220082-a11a-4c53-8d60-ab9217aef034"
         },
         "original": {
             "timestamp": "0:0",
@@ -35,15 +35,15 @@
                     "value": "bb"
                 },
                 "scrollTime": {
-                    "timestamp": "1:1",
-                    "value": "2023-01-20T18:16:31Z"
+                    "timestamp": "1:3",
+                    "value": "2023-01-20T20:48:18Z"
                 },
                 "template": {
                     "timestamp": "1:1",
                     "value": "P Dots S"
                 },
                 "verticalScroll": {
-                    "timestamp": "1:1",
+                    "timestamp": "1:3",
                     "value": 1872
                 }
             },
@@ -54,8 +54,57 @@
                     "value": "bc"
                 },
                 "scrollTime": {
+                    "timestamp": "1:4",
+                    "value": "2023-01-20T20:48:21Z"
+                },
+                "template": {
                     "timestamp": "1:1",
-                    "value": "2023-01-20T18:18:36Z"
+                    "value": "P Dots S"
+                },
+                "verticalScroll": {
+                    "timestamp": "1:4",
+                    "value": 1872
+                }
+            },
+            {
+                "id": "199fb186-cd1b-4fd6-94c1-7689a7e42605",
+                "idx": {
+                    "timestamp": "1:1",
+                    "value": "bd"
+                },
+                "scrollTime": {
+                    "timestamp": "1:3",
+                    "value": "2023-01-20T21:06:43Z"
+                },
+                "template": {
+                    "timestamp": "1:1",
+                    "value": "P Dots S"
+                },
+                "verticalScroll": {
+                    "timestamp": "1:3",
+                    "value": 1872
+                }
+            },
+            {
+                "id": "381e5d1b-d228-483e-9af1-54573272fec6",
+                "idx": {
+                    "timestamp": "1:1",
+                    "value": "be"
+                },
+                "template": {
+                    "timestamp": "1:1",
+                    "value": "P Dots S"
+                }
+            },
+            {
+                "id": "0c220082-a11a-4c53-8d60-ab9217aef034",
+                "idx": {
+                    "timestamp": "1:1",
+                    "value": "bf"
+                },
+                "scrollTime": {
+                    "timestamp": "1:1",
+                    "value": "2023-01-22T11:44:08Z"
                 },
                 "template": {
                     "timestamp": "1:1",
@@ -130,17 +179,53 @@
     "documentMetadata": {
     },
     "extraMetadata": {
+        "LastBallpointColor": "Black",
+        "LastBallpointSize": "2",
         "LastBallpointv2Color": "Red",
         "LastBallpointv2Size": "2",
+        "LastCalligraphyColor": "Black",
+        "LastCalligraphySize": "2",
+        "LastClearPageColor": "Black",
+        "LastClearPageSize": "2",
+        "LastEraseSectionColor": "Black",
+        "LastEraseSectionSize": "2",
         "LastEraserColor": "Black",
         "LastEraserSize": "2",
         "LastEraserTool": "Eraser",
+        "LastFinelinerColor": "Black",
+        "LastFinelinerSize": "2",
+        "LastFinelinerv2Color": "Black",
+        "LastFinelinerv2Size": "2",
+        "LastHighlighterColor": "Black",
+        "LastHighlighterSize": "2",
+        "LastHighlighterv2Color": "Black",
+        "LastHighlighterv2Size": "2",
+        "LastMarkerColor": "Black",
+        "LastMarkerSize": "2",
+        "LastMarkerv2Color": "Black",
+        "LastMarkerv2Size": "2",
+        "LastPaintbrushColor": "Black",
+        "LastPaintbrushSize": "2",
         "LastPaintbrushv2Color": "Gray",
         "LastPaintbrushv2Size": "2",
         "LastPen": "Ballpointv2",
+        "LastPencilColor": "Black",
+        "LastPencilSize": "2",
+        "LastPencilv2Color": "Black",
+        "LastPencilv2Size": "2",
+        "LastReservedPenColor": "Black",
+        "LastReservedPenSize": "2",
         "LastSelectionToolColor": "Black",
         "LastSelectionToolSize": "2",
-        "LastTool": "Ballpointv2"
+        "LastSharpPencilColor": "Black",
+        "LastSharpPencilSize": "2",
+        "LastSharpPencilv2Color": "Black",
+        "LastSharpPencilv2Size": "2",
+        "LastSolidPenColor": "Black",
+        "LastSolidPenSize": "2",
+        "LastTool": "Ballpointv2",
+        "LastZoomToolColor": "Black",
+        "LastZoomToolSize": "2"
     },
     "fileType": "notebook",
     "fontName": "",
@@ -148,10 +233,10 @@
     "lineHeight": -1,
     "margins": 125,
     "orientation": "portrait",
-    "pageCount": 3,
+    "pageCount": 6,
     "pageTags": [
     ],
-    "sizeInBytes": "94625",
+    "sizeInBytes": "112925",
     "tags": [
     ],
     "textAlignment": "justify",
