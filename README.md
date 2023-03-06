@@ -49,7 +49,7 @@ And then use `remarks` to export annotated pages to `Markdown`, `PDF`, `PNG`, or
 
 Because `remarks` depends only on [PyMuPDF](https://github.com/pymupdf/PyMuPDF) and [Shapely](https://github.com/shapely/shapely), there is no need to install `imagemagick`, `opencv`, or any additional image library. Both PyMuPDF and Shapely have [pre-built](https://pypi.org/project/PyMuPDF/#files) [wheels](https://pypi.org/project/Shapely/#files) for several platforms (macOS, Linux, Windows) and recent Python 3 versions, so installing them should be smooth and easy for most people.
 
-I currently use `remarks` with [reMarkable 1](https://remarkable.com/store/remarkable) and [reMarkable 2](https://remarkable.com/store/remarkable-2) tablets running software versions `2.14.3.1047` and `2.15.0.1067` on macOS Monterey (`12.6`) with CPython `3.10.x`. I don't have other equipment to test it thoroughly, but I expect `remarks` to work just fine in all common setups.
+I currently use `remarks` with [reMarkable 1](https://remarkable.com/store/remarkable) and [reMarkable 2](https://remarkable.com/store/remarkable-2) tablets running software versions `2.14.3.1047` and `2.15.0.1067` on macOS Ventura (`13.2.1`) with CPython `3.10.9`. I don't have other equipment to test it thoroughly, but I expect `remarks` to work just fine in all common setups.
 
 Incidentally, help the community keeping track of `remarks` compatibility across different setups:
 
@@ -130,6 +130,13 @@ python -m remarks ~/backups/remarkable/xochitl/ example_1/ --ann_type highlights
 
 python -m remarks ~/backups/remarkable/xochitl/ example_2/ --per_page_targets png
 ```
+
+
+## Tests
+
+Run `pytest` in the root directory of the project after installing the dependencies using `poetry`.
+
+This will create files in the `tests/out` directory. The contents of this directory can safely be deleted.
 
 
 ## Credits and Acknowledgements

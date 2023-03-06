@@ -23,6 +23,7 @@ PyMuPDF = "^1.21.1"
 [tool.poetry.dev-dependencies]
 black = "^22.12.0"
 flake8 = "^6.0.0"
+pytest = "^7.2.2"
 
 [build-system]
 # https://python-poetry.org/docs/pyproject/#poetry-and-pep-517
