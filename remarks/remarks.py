@@ -47,7 +47,9 @@ from .utils import (
 # - https://github.com/lucasrla/remarks/issues/11
 
 
-def run_remarks(input_dir, output_dir, file_name=None, file_uuid=None, file_path=None, **kwargs):
+def run_remarks(
+    input_dir, output_dir, file_name=None, file_uuid=None, file_path=None, **kwargs
+):
     num_docs = sum(1 for _ in pathlib.Path(f"{input_dir}/").glob("*.metadata"))
 
     if num_docs == 0:
@@ -61,7 +63,7 @@ def run_remarks(input_dir, output_dir, file_name=None, file_uuid=None, file_path
     )
 
     for metadata_path in pathlib.Path(f"{input_dir}/").glob("*.metadata"):
-        if metadata_path.stem != file_uuid:
+        if file_uuid is not None and metadata_path.stem != file_uuid:
             continue
 
         if not is_document(metadata_path):
