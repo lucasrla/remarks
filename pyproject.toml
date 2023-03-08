@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "remarks"
-version = "0.3.0"
+version = "0.3.1"
 description = "Extract your annotations (highlights, scribbles, ) and convert them to markdown, pdf, png, and svg. Works with documents annotated on reMarkable™ paper tablets."
 authors = ["lucasrla <lucasrla@users.noreply.github.com>"]
 readme = "README.md"
