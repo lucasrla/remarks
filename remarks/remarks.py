@@ -6,6 +6,7 @@ import sys
 import fitz  # PyMuPDF
 
 from .conversion.parsing import (
+    check_rm_file_version,
     parse_rm_file,
     rescale_parsed_data,
     get_ann_max_bound,
@@ -216,7 +217,7 @@ def process_document(
         has_ann_hl = False
 
         for f in ann_rm_files:
-            if page_uuid == f.stem:
+            if page_uuid == f.stem and check_rm_file_version(f):
                 ann_rm_file = f
                 has_ann = True
 
@@ -275,6 +276,8 @@ def process_document(
         )
 
         is_ann_out_page = False
+        ann_data = None
+
         if "scribbles" in ann_type and has_ann:
             parsed_data, has_ann_hl = parse_rm_file(ann_rm_file)
             # print(parsed_data)
@@ -314,7 +317,8 @@ def process_document(
             work_doc, ann_page = process_ocr(work_doc, ann_page)
             is_ocred = True
 
-        ann_page = draw_annotations_on_pdf(ann_data, ann_page)
+        if has_ann:
+            ann_page = draw_annotations_on_pdf(ann_data, ann_page)
 
         # TODO: add ability to extract highlighted images / tables (via pixmaps)?
 
@@ -349,8 +353,9 @@ def process_document(
                 presentation=md_hl_format,
             )
 
-        if per_page_targets:
+        if per_page_targets and (has_ann or has_smart_hl):
             out_path.mkdir(parents=True, exist_ok=True)
+
             if "pdf" in per_page_targets:
                 subdir = prepare_subdir(out_path, "pdf")
                 work_doc.save(f"{subdir}/{page_idx:0{pages_magnitude}}.pdf")
@@ -379,7 +384,7 @@ def process_document(
                 with open(f"{subdir}/{page_idx:0{pages_magnitude}}.md", "w") as f:
                     f.write(hl_text)
 
-        if modified_pdf:
+        if modified_pdf and (has_ann or has_smart_hl):
             mod_pdf.insert_pdf(work_doc, start_at=-1)
             pages_order.append(page_idx)
 
@@ -421,7 +426,7 @@ def process_document(
 
     if modified_pdf and (doc_type == "notebook" and combined_pdf):
         logging.info(
-            "- You asked for the modified PDF, but we won't bother generated it for this notebook. It would be the same as the combined PDF, which you're already getting"
+            "- You asked for the modified PDF, but we won't bother generated it for this notebook. It would be the same as the combined PDF, which you're already getting anyway"
         )
     elif modified_pdf:
         pages_order = sorted(

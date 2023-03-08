@@ -1,3 +1,4 @@
+import logging
 import struct
 
 import shapely.geometry as geom  # Shapely
@@ -104,31 +105,57 @@ def create_seg_dict(opacity, stroke_width, cc):
     return sg
 
 
-def parse_rm_file(file_path, dims={"x": RM_WIDTH, "y": RM_HEIGHT}):
+def check_rm_file_version(file_path):
     with open(file_path, "rb") as f:
         data = f.read()
     # print("data:", data)
 
-    expected_header_v3 = b"reMarkable .lines file, version=3          "
-    expected_header_v5 = b"reMarkable .lines file, version=5          "
-    if len(data) < len(expected_header_v5) + 4:
-        raise ValueError(f"{file_path} is too short to be a valid .rm file")
+    expected_header_fmt = b"reMarkable .lines file, version=0          "
+
+    if len(data) < len(expected_header_fmt) + 4:
+        logging.error(f"- .rm file ({file_path}) seems too short to be valid")
+        return False
 
     offset = 0
-    fmt = f"<{len(expected_header_v5)}sI"
+    fmt = f"<{len(expected_header_fmt)}sI"
+
+    header, nlayers = struct.unpack_from(fmt, data, offset)
+
+    is_v3 = header == b"reMarkable .lines file, version=3          "
+    is_v5 = header == b"reMarkable .lines file, version=5          "
+    is_v6 = header == b"reMarkable .lines file, version=6          "
+
+    if is_v6:
+        logging.error(
+            f"- Found a v6 .rm file ({file_path}) created with reMarkable software >= 3.0. Unfortunately we do not support this version yet. More info: https://github.com/lucasrla/remarks/issues/58"
+        )
+        return False
+
+    if (not is_v3 and not is_v5) or nlayers < 1:
+        logging.error(
+            f"- .rm file ({file_path}) doesn't look like a valid one: <header={header}><nlayers={nlayers}>"
+        )
+        return False
+
+    return True
+
+
+def parse_rm_file(file_path, dims={"x": RM_WIDTH, "y": RM_HEIGHT}):
+    with open(file_path, "rb") as f:
+        data = f.read()
+
+    expected_header_fmt = b"reMarkable .lines file, version=0          "
+
+    offset = 0
+    fmt = f"<{len(expected_header_fmt)}sI"
 
     header, nlayers = struct.unpack_from(fmt, data, offset)
     # print("header, nlayers", header, nlayers)
 
     offset += struct.calcsize(fmt)
 
-    is_v3 = header == expected_header_v3
-    is_v5 = header == expected_header_v5
-
-    if (not is_v3 and not is_v5) or nlayers < 1:
-        raise ValueError(
-            f"{file_path} is not a valid .rm file: <header={header}><nlayers={nlayers}>"
-        )
+    is_v3 = header == b"reMarkable .lines file, version=3          "
+    is_v5 = header == b"reMarkable .lines file, version=5          "
 
     output = {}
     output["layers"] = []

@@ -1,6 +1,6 @@
 # remarks
 
-> ⚠️ `remarks` does NOT work with reMarkable sofware >= 3.0 yet. [Follow issue #58 for updates](https://github.com/lucasrla/remarks/issues/58) ⚠️
+> ⚠️ `remarks` does NOT work with annotations created by reMarkable sofware >= 3.0 yet. [Follow issue #58 for updates](https://github.com/lucasrla/remarks/issues/58) ⚠️
 
 Extract annotations (text highlights and scribbles) and convert them to `Markdown`, `PDF`, `PNG`, and `SVG`. 
 
