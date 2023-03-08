@@ -119,6 +119,7 @@ def draw_annotations_on_pdf(data, page, inplace=False):
         # By "old style" I mean before Software releases 2.7 and 2.11
         # - https://support.remarkable.com/s/article/Software-release-2-7
         # - https://support.remarkable.com/s/article/Software-release-2-11
+
         if seg_type == "Highlighter":
             # print("seg_data:", seg_data)
 
@@ -178,12 +179,70 @@ def draw_annotations_on_pdf(data, page, inplace=False):
 
 
 # Highlights from reMarkable's own "smart" highlighting (introduced in 2.7)
-def add_smart_highlight_annotations(hl_data, page, inplace=False):
+def add_smart_highlight_annotations(hl_data, page, scale, inplace=False):
     hl_list = hl_data["highlights"][0]
 
     for hl in hl_list:
-        # https://pymupdf.readthedocs.io/en/latest/page.html#Page.add_highlight_annot
+        # print("hl=", hl)
+        # print("hl[text]:", hl["text"])
+
         quads = page.search_for(hl["text"], quads=True)
+        # print("len(quads)=", len(quads), "len(hl[rects])=", len(hl["rects"]))
+
+        # Allowing for some padding around the hl["rects"]
+        padding = 2
+
+        # If page.search_for finds too many occurences of hl["text"]
+        #
+        # This often happens when hl["text"] is a very short string (e.g. "re")
+        # - https://github.com/lucasrla/remarks/issues/57
+        if len(quads) > len(hl["rects"]):
+            logging.debug(
+                "- Found several occurences of highlighted text on the same page. Will restrict search to their clip area"
+            )
+
+            points = []
+            for r in hl["rects"]:
+                points.append((r["x"] - padding, r["y"] - padding))
+                points.append((r["x"] + r["width"] + padding, r["y"] - padding))
+                points.append((r["x"] - padding, r["y"] + r["height"] + padding))
+                points.append(
+                    (
+                        r["x"] + r["width"] + padding,
+                        r["y"] + r["height"] + padding,
+                    )
+                )
+
+            envelope = geom.MultiPoint(points).bounds
+            # `bounds` returns minimum bounding region (minx, miny, maxx, maxy)
+
+            scaled_envelope = [float(coord) * scale for coord in envelope]
+            # print("scaled_envelope", scaled_envelope)
+
+            quads = page.search_for(
+                hl["text"], quads=True, clip=fitz.Rect(scaled_envelope)
+            )
+            # print("quads", quads)
+
+        # If page.search_for cannot find hl["text"] in the PDF page
+        # This fix was inspired by @danieluhricek posts at
+        # - https://github.com/lucasrla/remarks/issues/52
+        if not quads:
+            logging.debug(
+                "- Couldn't get the highlighted text on the PDF. Will annotate based on their rects"
+            )
+
+            quads = [
+                fitz.Rect(
+                    (rect["x"] - padding) * scale,
+                    (rect["y"] - padding) * scale,
+                    (rect["x"] + rect["width"] + padding) * scale,
+                    (rect["y"] + rect["height"] + padding) * scale,
+                )
+                for rect in hl["rects"]
+            ]
+
+            # print("quads", quads)
 
         annot = page.add_highlight_annot(quads)
 

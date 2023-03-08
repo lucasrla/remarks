@@ -155,7 +155,7 @@ def process_document(
     # PyMuPDF's A4 default is width=595, height=842
     # - https://pymupdf.readthedocs.io/en/latest/document.html#Document.new_page
     # The 0.42 below is just me eye-balling PyMuPDF's defaults:
-    # 1404*0.42 ~= 590 and 1872*0.4 ~= 786
+    # 1404*0.42 ~= 590 and 1872*0.42 ~= 786
     #
     # reMarkable's desktop app exports notebooks to PDF with 445 x 594, in
     # terms of scale it is 445/1404 = ~0.316
@@ -265,7 +265,7 @@ def process_document(
 
             # `show_pdf_page()` works as a way to copy and resize content from
             # one doc/page/rect into another, but unlike `insert_pdf()` it will
-            # not carry over in-PDF links, annotaations, etc:
+            # not carry over in-PDF links, annotations, etc:
             # - https://pymupdf.readthedocs.io/en/latest/page.html#Page.show_pdf_page
             # - https://pymupdf.readthedocs.io/en/latest/document.html#Document.insert_pdf
 
@@ -336,7 +336,8 @@ def process_document(
         smart_hl_groups = []
         if "highlights" in ann_type and has_smart_hl:
             smart_hl_data = load_json_file(hl_json_file)
-            ann_page = add_smart_highlight_annotations(smart_hl_data, ann_page)
+            # print("smart_hl_data", smart_hl_data)
+            ann_page = add_smart_highlight_annotations(smart_hl_data, ann_page, scale)
             smart_hl_groups = extract_groups_from_smart_hl(smart_hl_data)
 
         hl_text = ""
@@ -406,6 +407,7 @@ def process_document(
                 add_smart_highlight_annotations(
                     smart_hl_data,
                     pdf_src[page_idx],
+                    scale,
                     inplace=True,
                 )
 
