@@ -18,10 +18,8 @@ def test_can_process_demo_with_default_args():
     }
     remarks.run_remarks("demo/on-computable-numbers/xochitl", "tests/out", **initial_args)
 
-    assert os.path.isfile("tests/out/1936 On Computable Numbers, with an Application to the Entscheidungsproblem - A. "
-                          "M _remarks.pdf")
-    assert os.path.isfile("tests/out/1936 On Computable Numbers, with an Application to the Entscheidungsproblem - A. "
-                          "M _highlights.md")
+    assert os.path.isfile("tests/out/1936 On Computable Numbers, with an Application to the Entscheidungsproblem - A. M. Turing _remarks.pdf")
+    assert os.path.isfile("tests/out/1936 On Computable Numbers, with an Application to the Entscheidungsproblem - A. M. Turing _highlights.md")
 
 
 def test_can_handle_drawing_with_many_scribbles():
