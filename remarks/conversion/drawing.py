@@ -94,6 +94,9 @@ def prepare_segments(data):
 
                 for segment in sg_content["points"]:
                     points = []
+                    if len(segment) <= 1:
+                        # line needs at least two points, see testcase v2_notebook_complex
+                        continue
                     for p in segment:
                         points.append((float(p[0]), float(p[1])))
 
