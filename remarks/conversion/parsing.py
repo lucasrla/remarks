@@ -248,6 +248,7 @@ def get_ann_max_bound(parsed_data):
                 for points in sg_value["points"]:
                     if len(points) <= 1:
                         # line needs at least two points, see testcase v2_notebook_complex
+                        logging.warning("Line segment with one or fewer lines, investigate further")
                         continue
                     line = geom.LineString([(float(p[0]), float(p[1])) for p in points])
                     collection.append(line)
