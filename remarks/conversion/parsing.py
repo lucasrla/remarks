@@ -8,7 +8,6 @@ from ..utils import (
     RM_HEIGHT,
 )
 
-
 # reMarkable tools
 # http://web.archive.org/web/20190806120447/https://support.remarkable.com/hc/en-us/articles/115004558545-5-1-Tools-Overview
 RM_TOOLS = {
@@ -140,7 +139,9 @@ def check_rm_file_version(file_path):
     return True
 
 
-def parse_rm_file(file_path, dims={"x": RM_WIDTH, "y": RM_HEIGHT}):
+def parse_rm_file(file_path, dims={
+    "x": RM_WIDTH,
+    "y": RM_HEIGHT}):
     with open(file_path, "rb") as f:
         data = f.read()
 
@@ -235,7 +236,13 @@ def rescale_parsed_data(parsed_data, scale):
     return parsed_data
 
 
+# The line segment will pop up hundreds or thousands of times in notebooks where it is relevant.
+# this flag ensures it will print at most once.
+_line_segment_warning_has_been_shown = False
+
+
 def get_ann_max_bound(parsed_data):
+    global _line_segment_warning_has_been_shown
     # https://shapely.readthedocs.io/en/stable/manual.html#LineString
     # https://shapely.readthedocs.io/en/stable/manual.html#MultiLineString
     # https://shapely.readthedocs.io/en/stable/manual.html#object.bounds
@@ -248,7 +255,10 @@ def get_ann_max_bound(parsed_data):
                 for points in sg_value["points"]:
                     if len(points) <= 1:
                         # line needs at least two points, see testcase v2_notebook_complex
-                        logging.warning("Line segment with one or fewer lines, investigate further")
+                        if not _line_segment_warning_has_been_shown:
+                            logging.warning("- Found a segment with a single point, will ignore it. Please report this "
+                                            "issue at: https://github.com/lucasrla/remarks/issues/64 ")
+                            _line_segment_warning_has_been_shown = True
                         continue
                     line = geom.LineString([(float(p[0]), float(p[1])) for p in points])
                     collection.append(line)

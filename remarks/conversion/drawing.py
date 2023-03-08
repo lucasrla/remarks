@@ -96,7 +96,6 @@ def prepare_segments(data):
                     points = []
                     if len(segment) <= 1:
                         # line needs at least two points, see testcase v2_notebook_complex
-                        logging.warning("Line segment with only a single point, skipping")
                         continue
                     for p in segment:
                         points.append((float(p[0]), float(p[1])))
