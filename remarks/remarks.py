@@ -314,7 +314,7 @@ def process_document(
             and not avoid_ocr
         ):
             logging.warning("- Will run OCRmyPDF on this document. Hold on!")
-            work_doc, ann_page = process_ocr(work_doc, ann_page)
+            work_doc, ann_page = process_ocr(work_doc)
             is_ocred = True
 
         if has_ann:
@@ -459,7 +459,7 @@ def process_document(
     pdf_src.close()
 
 
-def process_ocr(work_doc, ann_page):
+def process_ocr(work_doc):
     tmp_fname = "_tmp.pdf"
     work_doc.save(tmp_fname)
 
