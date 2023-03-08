@@ -19,6 +19,7 @@ classifiers = [
 python = "^3.10.9"
 Shapely = "^2.0.1"
 PyMuPDF = "^1.21.1"
+rmscene = "^0.2.0"
 
 [tool.poetry.dev-dependencies]
 black = "^22.12.0"
