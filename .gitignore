@@ -13,3 +13,4 @@ demo/
 !demo/on-computable-numbers/xochitl/
 
 tests/out/*
+.pytest_cache/

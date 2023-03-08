@@ -134,9 +134,20 @@ python -m remarks ~/backups/remarkable/xochitl/ example_2/ --per_page_targets pn
 
 ## Tests
 
-Run `pytest` in the root directory of the project after installing the dependencies using `poetry`.
+Run `pytest` in the root directory of the project after installing the dependencies using `poetry`. This will create files in the `tests/out` directory. The contents of this directory can safely be deleted.
 
-This will create files in the `tests/out` directory. The contents of this directory can safely be deleted.
+Example:
+
+```sh
+python -m pytest -q remarks/test_initial.py
+..                                         [100%]
+2 passed in 2.51s
+
+ls tests/out
+  1936 On Computable Numbers, with an Application to the Entscheidungsproblem - A. M. Turing _highlights.md  
+  Gosper _remarks.pdf
+  1936 On Computable Numbers, with an Application to the Entscheidungsproblem - A. M. Turing _remarks.pdf
+```
 
 
 ## Credits and Acknowledgements
