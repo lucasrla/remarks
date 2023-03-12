@@ -1,3 +1,4 @@
+import logging
 import math
 import struct
 
@@ -182,6 +183,40 @@ def determine_document_dimensions(file_path):
     }
 
 
+def check_rm_file_version(file_path):
+    with open(file_path, "rb") as f:
+        data = f.read()
+
+    expected_header_fmt = b"reMarkable .lines file, version=0          "
+
+    if len(data) < len(expected_header_fmt) + 4:
+        logging.error(f"- .rm file ({file_path}) seems too short to be valid")
+        return False
+
+    offset = 0
+    fmt = f"<{len(expected_header_fmt)}sI"
+
+    header, nlayers = struct.unpack_from(fmt, data, offset)
+
+    is_v3 = header == b"reMarkable .lines file, version=3          "
+    is_v5 = header == b"reMarkable .lines file, version=5          "
+    is_v6 = header == b"reMarkable .lines file, version=6          "
+
+    if is_v6:
+        return True
+        # logging.error(
+        #     f"- Found a v6 .rm file ({file_path}) created with reMarkable software >= 3.0. Unfortunately we do not support this version yet. More info: https://github.com/lucasrla/remarks/issues/58"
+        # )
+
+    if (not is_v3 and not is_v5) or nlayers < 1:
+        logging.error(
+            f"- .rm file ({file_path}) doesn't look like a valid one: <header={header}><nlayers={nlayers}>"
+        )
+        return False
+
+    return True
+
+
 def parse_rm_file(file_path, dims=None):
     if dims is None:
         dims = {
@@ -190,6 +225,8 @@ def parse_rm_file(file_path, dims=None):
     with open(file_path, "rb") as f:
         data = f.read()
 
+    expected_header_fmt = b"reMarkable .lines file, version=0          "
+
     expected_header_v3 = b"reMarkable .lines file, version=3          "
     expected_header_v5 = b"reMarkable .lines file, version=5          "
     expected_header_v6 = b"reMarkable .lines file, version=6          "
@@ -197,7 +234,7 @@ def parse_rm_file(file_path, dims=None):
         raise ValueError(f"{file_path} is too short to be a valid .rm file")
 
     offset = 0
-    fmt = f"<{len(expected_header_v5)}sI"
+    fmt = f"<{len(expected_header_fmt)}sI"
 
     header, nlayers = struct.unpack_from(fmt, data, offset)
 
@@ -294,7 +331,13 @@ def rescale_parsed_data(parsed_data, scale):
     return parsed_data
 
 
+# The line segment will pop up hundreds or thousands of times in notebooks where it is relevant.
+# this flag ensures it will print at most once.
+_line_segment_warning_has_been_shown = False
+
+
 def get_ann_max_bound(parsed_data):
+    global _line_segment_warning_has_been_shown
     # https://shapely.readthedocs.io/en/stable/manual.html#LineString
     # https://shapely.readthedocs.io/en/stable/manual.html#MultiLineString
     # https://shapely.readthedocs.io/en/stable/manual.html#object.bounds
@@ -307,6 +350,10 @@ def get_ann_max_bound(parsed_data):
                 for points in sg_value["points"]:
                     if len(points) <= 1:
                         # line needs at least two points, see testcase v2_notebook_complex
+                        if not _line_segment_warning_has_been_shown:
+                            logging.warning("- Found a segment with a single point, will ignore it. Please report this "
+                                            "issue at: https://github.com/lucasrla/remarks/issues/64 ")
+                            _line_segment_warning_has_been_shown = True
                         continue
                     line = geom.LineString([(float(p[0]), float(p[1])) for p in points])
                     collection.append(line)

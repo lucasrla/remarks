@@ -1,4 +1,5 @@
 from .parsing import (
+    check_rm_file_version,
     parse_rm_file,
     rescale_parsed_data,
     get_ann_max_bound,
