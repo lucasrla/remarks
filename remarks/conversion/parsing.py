@@ -3,7 +3,8 @@ import math
 import struct
 
 import shapely.geometry as geom  # Shapely
-from rmscene import read_blocks, SceneLineItemBlock, RootTextBlock
+from rmscene import read_blocks, SceneTree, build_tree
+from rmscene.scene_items import Line
 
 from ..utils import (
     RM_WIDTH,
@@ -125,20 +126,23 @@ def parse_v6(file_path):
     dims = determine_document_dimensions(file_path)
 
     with open(file_path, "rb") as f:
-        for el in read_blocks(f):
-            if isinstance(el, SceneLineItemBlock):
+        tree = SceneTree()
+        blocks = read_blocks(f)
+        build_tree(tree, blocks)
+        for el in tree.walk():
+            if isinstance(el, Line):
                 layer = output["layers"][0]
 
-                if el.value is None:
+                if el.points is None:
                     break
-                pen = el.value.tool.value
-                color = el.value.color.value
+                pen = el.tool.value
+                color = el.color.value
                 opacity = 1
-                stroke_width = el.value.thickness_scale
+                stroke_width = el.thickness_scale
 
                 tool, stroke_width, opacity = process_tool(pen, dims, stroke_width, opacity)
                 segment = create_seg_dict(opacity, stroke_width, color)
-                points_ = [(f"{p.x + RM_WIDTH / 2:.3f}", f"{p.y:.3f}") for p in el.value.points]
+                points_ = [(f"{p.x + RM_WIDTH / 2:.3f}", f"{p.y:.3f}") for p in el.points]
                 segment['points'].append(points_)
                 if tool not in layer["strokes"].keys():
                     layer["strokes"] = update_stroke_dict(layer["strokes"], tool)
@@ -169,13 +173,14 @@ def determine_document_dimensions(file_path):
         "y_max": RM_HEIGHT - 1
     }
     with open(file_path, "rb") as f:
-        for el in read_blocks(f):
-            if isinstance(el, SceneLineItemBlock):
-                if el.value is not None:
-                    for p in el.value.points:
-                        update_boundaries_from_point(p.x, p.y, dims)
-            elif isinstance(el, RootTextBlock):
-                update_boundaries_from_point(el.pos_x, el.pos_y, dims)
+        blocks = read_blocks(f)
+        tree = SceneTree()
+        build_tree(tree, blocks)
+
+        for el in tree.walk():
+            if isinstance(el, Line):
+                for p in el.points:
+                    update_boundaries_from_point(p.x, p.y, dims)
 
     return {
         "x": dims["x_max"] - dims["x_min"],
