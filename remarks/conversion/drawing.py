@@ -116,6 +116,9 @@ def prepare_segments(data):
 def draw_annotations_on_pdf(data, page, inplace=False):
     segments = prepare_segments(data)
 
+    # annot.update() calls have a lot of overhead.
+    # We can batch tools with equal settings to reduce the amount of calls drastically
+    batched_lines_per_tool = {}
     for seg_name, seg_data in segments.items():
         seg_type = seg_name.split("_")[0]
 
@@ -167,18 +170,30 @@ def draw_annotations_on_pdf(data, page, inplace=False):
 
         # Scribbles
         else:
+            # add all lines with the same tool-configuration to the same batch
+            batch_key = (seg_data['stroke-width'], seg_data['opacity'], seg_data['color-code'])
+
+            if batch_key in batched_lines_per_tool:
+                batch_points = batched_lines_per_tool[batch_key]
+            else:
+                batch_points = []
+                batched_lines_per_tool[batch_key] = batch_points
+
             for seg_points in seg_data["points"]:
-                # https://pymupdf.readthedocs.io/en/latest/recipes-annotations.html#how-to-use-ink-annotations
-                annot = page.add_ink_annot([seg_points])
-                annot.set_border(width=seg_data["stroke-width"])
-                annot.set_opacity(seg_data["opacity"])
+                batch_points.append(seg_points)
 
-                color_array = fitz.utils.getColor(
-                    SC_COLOR_CODES[seg_data["color-code"]]
-                )
-                annot.set_colors(stroke=color_array)
+    # draw the batched lines
+    for (stroke_width, opacity, color_code), points in batched_lines_per_tool.items():
+        annot = page.add_ink_annot(points)
+        annot.set_border(width=stroke_width)
+        annot.set_opacity(opacity)
 
-                annot.update()
+        color_array = fitz.utils.getColor(
+            SC_COLOR_CODES[color_code]
+        )
+        annot.set_colors(stroke=color_array)
+
+        annot.update()
 
     if not inplace:
         return page
