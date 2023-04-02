@@ -8,7 +8,6 @@ from ..utils import (
     RM_HEIGHT,
 )
 
-
 HL_COLOR_CODES = {
     3: "yellow",
     4: "green",
@@ -25,7 +24,9 @@ SC_COLOR_CODES = {
 }
 
 
-def draw_svg(data, dims={"x": RM_WIDTH, "y": RM_HEIGHT}):
+def draw_svg(data, dims={
+    "x": RM_WIDTH,
+    "y": RM_HEIGHT}):
     stroke_color = SC_COLOR_CODES
 
     output = f'<svg xmlns="http://www.w3.org/2000/svg" width="{dims["x"]}" height="{dims["y"]}">'
@@ -170,8 +171,12 @@ def draw_annotations_on_pdf(data, page, inplace=False):
 
         # Scribbles
         else:
-            # add all lines with the same tool-configuration to the same batch
-            batch_key = (seg_data['stroke-width'], seg_data['opacity'], seg_data['color-code'])
+            # add all lines with the same tool-configuration to the same batch, using a key for their config
+            if seg_type == "Eraser":
+                # overwrite color to always be white for erasers
+                batch_key = (seg_data['stroke-width'], seg_data['opacity'], 2)
+            else:
+                batch_key = (seg_data['stroke-width'], seg_data['opacity'], seg_data['color-code'])
 
             if batch_key in batched_lines_per_tool:
                 batch_points = batched_lines_per_tool[batch_key]
