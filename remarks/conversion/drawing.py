@@ -8,7 +8,6 @@ from ..utils import (
     RM_HEIGHT,
 )
 
-
 HL_COLOR_CODES = {
     3: "yellow",
     4: "green",
@@ -25,7 +24,9 @@ SC_COLOR_CODES = {
 }
 
 
-def draw_svg(data, dims={"x": RM_WIDTH, "y": RM_HEIGHT}):
+def draw_svg(data, dims={
+    "x": RM_WIDTH,
+    "y": RM_HEIGHT}):
     stroke_color = SC_COLOR_CODES
 
     output = f'<svg xmlns="http://www.w3.org/2000/svg" width="{dims["x"]}" height="{dims["y"]}">'
@@ -164,6 +165,9 @@ def draw_annotations_on_pdf(data, page, inplace=False):
 
         # Scribbles
         else:
+            if seg_data == "Eraser":
+                # Overwrite eraser color to always be white.
+                seg_data['color-code'] = 2
             for seg_points in seg_data["points"]:
                 # https://pymupdf.readthedocs.io/en/latest/recipes-annotations.html#how-to-use-ink-annotations
                 annot = page.add_ink_annot([seg_points])
