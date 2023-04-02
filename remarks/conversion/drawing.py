@@ -8,6 +8,7 @@ from ..utils import (
     RM_HEIGHT,
 )
 
+
 HL_COLOR_CODES = {
     3: "yellow",
     4: "green",
@@ -24,9 +25,7 @@ SC_COLOR_CODES = {
 }
 
 
-def draw_svg(data, dims={
-    "x": RM_WIDTH,
-    "y": RM_HEIGHT}):
+def draw_svg(data, dims={"x": RM_WIDTH, "y": RM_HEIGHT}):
     stroke_color = SC_COLOR_CODES
 
     output = f'<svg xmlns="http://www.w3.org/2000/svg" width="{dims["x"]}" height="{dims["y"]}">'
