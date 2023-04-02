@@ -57,7 +57,7 @@ def process_tool(pen, dims, w, opc):
         opc = 0.6
         # cc = 3
     elif tool == "Eraser":
-        w = 1280 * w * w - 4800 * w + 4510
+        w = w * 6 * 2.3
         # cc = 2
     elif tool == "SharpPencil" or tool == "TiltPencil":
         w = 16 * w - 27
