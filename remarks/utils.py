@@ -1,7 +1,9 @@
 import json
 import pathlib
 from functools import cache
+from typing import Tuple
 
+from remarks.dimensions import PyMuPDFDimensions, REMARKABLE_DOCUMENT, ReMarkableDimensions
 
 # reMarkable's device dimensions
 RM_WIDTH = 1404

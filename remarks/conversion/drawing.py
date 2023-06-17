@@ -131,8 +131,6 @@ def draw_annotations_on_pdf(data, page, inplace=False):
         # - https://support.remarkable.com/s/article/Software-release-2-11
 
         if seg_type == "Highlighter":
-            # print("seg_data:", seg_data)
-
             # If there are multiple rectangles per segment, do not want to
             # loop over them. Instead, just send them all to addHighlightAnnot.
             # It can handle a list of rectangles and will join them into one
@@ -144,7 +142,6 @@ def draw_annotations_on_pdf(data, page, inplace=False):
                 # https://pymupdf.readthedocs.io/en/latest/recipes-annotations.html#how-to-add-and-modify-annotations
                 annot = page.add_highlight_annot(seg_data["rects"])
 
-                # Now supporting colors
                 try:
                     color_array = fitz.utils.getColor(
                         HL_COLOR_CODES[seg_data["color-code"]]
@@ -158,12 +155,6 @@ def draw_annotations_on_pdf(data, page, inplace=False):
                 annot.set_opacity(seg_data["opacity"])
                 annot.set_border(width=seg_data["stroke-width"])
                 annot.update()
-
-                # print("annot.rect:", annot.rect)
-                # print("annot.border:", annot.border)
-                # print("annot.opacity:", annot.opacity)
-                # print("annot.colors:", annot.colors)
-
             except Exception as e:
                 logging.warning(
                     f"- Just ran into an exception while adding a highlight. It probably happened because of a small highlight that PyMuPDF couldn't handle well enough: {e}"

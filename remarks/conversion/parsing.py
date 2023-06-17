@@ -11,6 +11,8 @@ from ..utils import (
     RM_HEIGHT,
 )
 
+from ..dimensions import ReMarkableDimensions, REMARKABLE_DOCUMENT
+
 # reMarkable tools
 # http://web.archive.org/web/20190806120447/https://support.remarkable.com/hc/en-us/articles/115004558545-5-1-Tools-Overview
 RM_TOOLS = {
@@ -50,7 +52,7 @@ def process_tool(pen, dims, w, opc):
         pass
     elif tool == "Ballpoint" or tool == "Fineliner":
         w = 32 * w * w - 116 * w + 107
-        if dims["x"] == RM_WIDTH and dims["y"] == RM_HEIGHT:  # defaults
+        if dims.width == RM_WIDTH and dims.height == RM_HEIGHT:  # defaults
             w *= 1.8
     elif tool == "Marker":
         w = (64 * w - 112) / 2
@@ -60,7 +62,7 @@ def process_tool(pen, dims, w, opc):
         opc = 0.6
         # cc = 3
     elif tool == "Eraser":
-        w = w * 6 * 2.3
+        w = w * 18 * 2.3
         # cc = 2
     elif tool == "SharpPencil" or tool == "TiltPencil":
         w = 16 * w - 27
@@ -78,15 +80,15 @@ def process_tool(pen, dims, w, opc):
     return name_code, w, opc
 
 
-def adjust_xypos_sizes(xpos, ypos, dims):
-    ratio = (dims["y"] / dims["x"]) / (RM_HEIGHT / RM_WIDTH)
+def adjust_xypos_sizes(xpos, ypos, dims: ReMarkableDimensions):
+    ratio = (dims.height / dims.height) / (RM_HEIGHT / RM_WIDTH)
 
     if ratio > 1:
-        xpos = ratio * ((xpos * dims["x"]) / RM_WIDTH)
-        ypos = (ypos * dims["y"]) / RM_HEIGHT
+        xpos = ratio * ((xpos * dims.height) / RM_WIDTH)
+        ypos = (ypos * dims.height) / RM_HEIGHT
     else:
-        xpos = (xpos * dims["x"]) / RM_WIDTH
-        ypos = (1 / ratio) * (ypos * dims["y"]) / RM_HEIGHT
+        xpos = (xpos * dims.height) / RM_WIDTH
+        ypos = (1 / ratio) * (ypos * dims.height) / RM_HEIGHT
 
     return xpos, ypos
 
@@ -142,7 +144,7 @@ def parse_v6(file_path):
 
                 tool, stroke_width, opacity = process_tool(pen, dims, stroke_width, opacity)
                 segment = create_seg_dict(opacity, stroke_width, color)
-                points_ = [(f"{p.x + RM_WIDTH / 2:.3f}", f"{p.y:.3f}") for p in el.points]
+                points_ = [(f"{p.x:.3f}", f"{p.y:.3f}") for p in el.points]
                 segment['points'].append(points_)
                 if tool not in layer["strokes"].keys():
                     layer["strokes"] = update_stroke_dict(layer["strokes"], tool)
@@ -159,7 +161,7 @@ def rounddown(num, increment):
     return int(math.floor(num / increment)) * increment
 
 
-def determine_document_dimensions(file_path):
+def determine_document_dimensions(file_path) -> ReMarkableDimensions:
     """The ReMarkable has dynamic document size in v6. The dimensions are not available anywhere, so we'll compute
     them from points"""
     # This is the horizontal space you get as defined by ReMarkable.
@@ -182,10 +184,7 @@ def determine_document_dimensions(file_path):
                 for p in el.points:
                     update_boundaries_from_point(p.x, p.y, dims)
 
-    return {
-        "x": dims["x_max"] - dims["x_min"],
-        "y": dims["y_max"] - dims["y_min"]
-    }
+    return ReMarkableDimensions(dims["x_max"] - dims["x_min"], dims["y_max"] - dims["y_min"])
 
 
 def check_rm_file_version(file_path):
@@ -224,9 +223,7 @@ def check_rm_file_version(file_path):
 
 def parse_rm_file(file_path, dims=None):
     if dims is None:
-        dims = {
-            "x": RM_WIDTH,
-            "y": RM_HEIGHT}
+        dims = REMARKABLE_DOCUMENT
     with open(file_path, "rb") as f:
         data = f.read()
 
@@ -260,7 +257,7 @@ def parse_rm_file(file_path, dims=None):
     )
 
 
-def parse_v3_to_v5(data, dims, is_v3, nlayers, offset):
+def parse_v3_to_v5(data, dims: ReMarkableDimensions, is_v3, nlayers, offset):
     output = {}
     output["layers"] = []
     has_highlighter = False
@@ -313,10 +310,7 @@ def parse_v3_to_v5(data, dims, is_v3, nlayers, offset):
 
 
 # TODO: make the rescale part of the parsing (or perhaps drawing?) process
-def rescale_parsed_data(parsed_data, scale):
-    if scale == 1:
-        return parsed_data
-
+def rescale_parsed_data(parsed_data, scale, offset_x):
     for strokes in parsed_data["layers"]:
         for _, st_value in strokes["strokes"].items():
             for _, sg_value in enumerate(st_value["segments"]):
@@ -329,7 +323,7 @@ def rescale_parsed_data(parsed_data, scale):
                 for i, points in enumerate(sg_value["points"]):
                     for k, point in enumerate(points):
                         sg_value["points"][i][k] = (
-                            f"{float(point[0]) * scale:.3f}",
+                            f"{float(point[0]) * scale + offset_x:.3f}",
                             f"{float(point[1]) * scale:.3f}",
                         )
 
@@ -365,6 +359,6 @@ def get_ann_max_bound(parsed_data):
 
     if len(collection) > 0:
         (minx, miny, maxx, maxy) = geom.MultiLineString(collection).bounds
-        return (maxx, maxy)
+        return (maxx, maxy, minx, miny)
     else:
         return (0, 0)

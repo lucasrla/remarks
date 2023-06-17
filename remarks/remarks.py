@@ -4,14 +4,14 @@ import pathlib
 import random
 import sys
 from pprint import pprint
+from typing import List, Tuple
 
 import fitz  # PyMuPDF
 
 from .conversion.parsing import (
-    check_rm_file_version,
     parse_rm_file,
     rescale_parsed_data,
-    get_ann_max_bound, determine_document_dimensions,
+    get_ann_max_bound, determine_document_dimensions, check_rm_file_version,
 )
 from .conversion.text import (
     check_if_text_extractable,
@@ -27,6 +27,7 @@ from .conversion.drawing import (
     draw_annotations_on_pdf,
     add_smart_highlight_annotations,
 )
+from .dimensions import ReMarkableDimensions, REMARKABLE_DOCUMENT, PyMuPDFDimensions
 from .utils import (
     is_document,
     get_document_filetype,
@@ -41,6 +42,7 @@ from .utils import (
     RM_WIDTH,
     RM_HEIGHT,
 )
+
 
 # TODO: add support to `.textconversion/*.json` files, that's an easy way to
 # start offering some support to handwriting conversion...
@@ -102,6 +104,13 @@ def run_remarks(
     )
 
 
+"""
+ReMarkable has a resolution, it's 1404x1872. We'll consider anything in this unit rmpts for "ReMarkable points"
+PyMuPDF has its own internal points-based resolution. We'll consider this the "mupts"
+A4 has a size of 210x297mm.
+"""
+
+
 # TODO: review args
 def process_document(
     metadata_path,
@@ -152,15 +161,6 @@ def process_document(
         mod_pdf = fitz.open()
         pages_order = []
 
-    # PyMuPDF's A4 default is width=595, height=842
-    # - https://pymupdf.readthedocs.io/en/latest/document.html#Document.new_page
-    # The 0.42 below is just me eye-balling PyMuPDF's defaults:
-    # 1404*0.42 ~= 590 and 1872*0.42 ~= 786
-    #
-    # reMarkable's desktop app exports notebooks to PDF with 445 x 594, in
-    # terms of scale it is 445/1404 = ~0.316
-    note_page_dims = (RM_WIDTH * 0.42, RM_HEIGHT * 0.42)
-
     # Open the original PDF source document
     if doc_type in ["pdf", "epub"]:
         f = metadata_path.with_name(f"{metadata_path.stem}.pdf")
@@ -177,31 +177,26 @@ def process_document(
         #
         # reMarkable's desktop app exports notebooks to PDF with 445 x 594, in
         # terms of scale it is 445/1404 = ~0.316
-        note_page_dims = (RM_WIDTH * 0.42, RM_HEIGHT * 0.42)
         # Open an empty PDF to be treated as if it were the original document
         pdf_src = fitz.open()
-        pages_map = []
+        pages_map: List[ReMarkableDimensions] = []
         for page in pages_list:
             paths = filter(lambda _ann_page: _ann_page.stem == page, ann_rm_files)
             path = next(paths, None)
             if path:
                 try:
-                    dimensions = determine_document_dimensions(path)
-                    pages_map.append((-1, (dimensions["x"], dimensions["y"])))
+                    pages_map.append(determine_document_dimensions(path))
                 except ValueError:
-                    pages_map.append((-1, note_page_dims))
+                    pages_map.append(REMARKABLE_DOCUMENT)
             else:
-                pages_map.append((-1, note_page_dims))
+                pages_map.append(REMARKABLE_DOCUMENT)
 
         # For each note page, add a blank page to the original document
-        for i, value in enumerate(pages_map):
-            if isinstance(value, int):
-                page_idx, dims = value, note_page_dims
-            else:
-                page_idx, dims = value
+        for i, dims in enumerate(pages_map):
+            mu_dims = dims.to_mm().to_mu()
             pdf_src.new_page(
-                width=dims[0],
-                height=dims[1],
+                width=mu_dims.width,
+                height=mu_dims.height,
                 pno=i,
             )
 
@@ -211,8 +206,6 @@ def process_document(
 
     for page_uuid in pages_to_process:
         page_idx = pages_list.index(f"{page_uuid}")
-        # print("page_uuid:", page_uuid)
-        # print("page_idx", page_idx)
 
         ann_rm_file = None
         hl_json_file = None
@@ -236,29 +229,13 @@ def process_document(
 
         # Get document page dimensions and calculate what scale should be
         # applied to fit it into the device (given the device's own dimensions)
-        pdf_src_dims = (
-            pdf_src.load_page(page_idx).rect.width,
-            pdf_src.load_page(page_idx).rect.height,
-        )
-        pdf_src_dims_downscaled, scale = rescale_given_device_aspect_ratio(
-            pdf_src_dims,
-        )
-        # print("pdf_src_dims:", pdf_src_dims)
-        # print("scale:", scale)
-        # print("pdf_src_dims_downscaled:", pdf_src_dims_downscaled)
-
-        # Create page to annotate using the device's dimensions to allow for
-        # "margin" annotations that would be outside the original doc dimensions
-        device_dims_downscaled = RM_WIDTH * scale, RM_HEIGHT * scale
-        # print("device_dims_downscaled", device_dims_downscaled)
-
         ann_page = work_doc.new_page(
-            width=device_dims_downscaled[0],
-            height=device_dims_downscaled[1],
+            width=REMARKABLE_DOCUMENT.width,
+            height=REMARKABLE_DOCUMENT.height,
         )
 
         pdf_src_page_rect = fitz.Rect(
-            0, 0, pdf_src_dims_downscaled[0], pdf_src_dims_downscaled[1]
+            0, 0, REMARKABLE_DOCUMENT.width, REMARKABLE_DOCUMENT.height
         )
 
         # This check is necessary because PyMuPDF doesn't let us
@@ -281,22 +258,18 @@ def process_document(
         )
 
         is_ann_out_page = False
-        ann_data = None
 
         if "scribbles" in ann_type and has_ann:
-            parsed_data, has_ann_hl = parse_rm_file(ann_rm_file)
-            # print(parsed_data)
-
-            ann_data = rescale_parsed_data(parsed_data, scale)
-            # print(ann_data)
-
-            # Check if there are annotations outside the original page limits
-            x_max, y_max = get_ann_max_bound(ann_data)
-            is_ann_out_page = (x_max > pdf_src_dims_downscaled[0]) or (
-                y_max > pdf_src_dims_downscaled[1]
-            )
-        # print("is_ann_out_page:", is_ann_out_page)
-
+            ann_data, has_ann_hl = parse_rm_file(ann_rm_file)
+            x_max, y_max, x_min, y_min = get_ann_max_bound(ann_data)
+            offset = 0
+            is_ann_out_page = True
+            if doc_type in ["pdf", "epub"]:
+                offset = RM_WIDTH / 2
+            if abs(x_min) + abs(x_max) > 1872:
+                ann_data = rescale_parsed_data(ann_data, RM_WIDTH / (max(x_max, 1872) - min(x_min, 0)), offset)
+            else:
+                ann_data = rescale_parsed_data(ann_data, RM_HEIGHT / (max(y_max, 2048) - min(y_min, 0)), offset)
         if "highlights" not in ann_type and has_ann_hl:
             logging.info(
                 "- Found highlighted text on page #{page_idx} but `--ann_type` flag is set to `scribbles` only, so we won't bother with it"
