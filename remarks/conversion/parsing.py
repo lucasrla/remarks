@@ -310,7 +310,7 @@ def parse_v3_to_v5(data, dims: ReMarkableDimensions, is_v3, nlayers, offset):
 
 
 # TODO: make the rescale part of the parsing (or perhaps drawing?) process
-def rescale_parsed_data(parsed_data, scale, offset_x):
+def rescale_parsed_data(parsed_data, scale, offset_x, offset_y):
     for strokes in parsed_data["layers"]:
         for _, st_value in strokes["strokes"].items():
             for _, sg_value in enumerate(st_value["segments"]):
@@ -324,7 +324,7 @@ def rescale_parsed_data(parsed_data, scale, offset_x):
                     for k, point in enumerate(points):
                         sg_value["points"][i][k] = (
                             f"{float(point[0]) * scale + offset_x:.3f}",
-                            f"{float(point[1]) * scale:.3f}",
+                            f"{float(point[1]) * scale + offset_y:.3f}",
                         )
 
     return parsed_data

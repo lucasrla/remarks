@@ -229,9 +229,16 @@ def process_document(
 
         # Get document page dimensions and calculate what scale should be
         # applied to fit it into the device (given the device's own dimensions)
+        if ann_rm_file:
+            try:
+                dims = determine_document_dimensions(ann_rm_file)
+            except ValueError:
+                dims = REMARKABLE_DOCUMENT
+        else:
+            dims = REMARKABLE_DOCUMENT
         ann_page = work_doc.new_page(
-            width=REMARKABLE_DOCUMENT.width,
-            height=REMARKABLE_DOCUMENT.height,
+            width=dims.width,
+            height=dims.height,
         )
 
         pdf_src_page_rect = fitz.Rect(
@@ -262,14 +269,17 @@ def process_document(
         if "scribbles" in ann_type and has_ann:
             ann_data, has_ann_hl = parse_rm_file(ann_rm_file)
             x_max, y_max, x_min, y_min = get_ann_max_bound(ann_data)
-            offset = 0
+            offset_x = 0
+            offset_y = 0
             is_ann_out_page = True
             if doc_type in ["pdf", "epub"]:
-                offset = RM_WIDTH / 2
+                offset_x = RM_WIDTH / 2
+            if dims.height >= (RM_HEIGHT + 88 * 3):
+                offset_y = 3 * 88 # why 3 * text_offset? No clue, ask ReMarkable.
             if abs(x_min) + abs(x_max) > 1872:
-                ann_data = rescale_parsed_data(ann_data, RM_WIDTH / (max(x_max, 1872) - min(x_min, 0)), offset)
+                ann_data = rescale_parsed_data(ann_data, RM_WIDTH / (max(x_max, 1872) - min(x_min, 0)), offset_x, offset_y)
             else:
-                ann_data = rescale_parsed_data(ann_data, RM_HEIGHT / (max(y_max, 2048) - min(y_min, 0)), offset)
+                ann_data = rescale_parsed_data(ann_data, RM_HEIGHT / (max(y_max, 2048) - min(y_min, 0)), offset_x, offset_y)
         if "highlights" not in ann_type and has_ann_hl:
             logging.info(
                 "- Found highlighted text on page #{page_idx} but `--ann_type` flag is set to `scribbles` only, so we won't bother with it"
