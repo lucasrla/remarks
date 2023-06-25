@@ -267,12 +267,12 @@ def process_document(
         is_ann_out_page = False
 
         if "scribbles" in ann_type and has_ann:
-            ann_data, has_ann_hl = parse_rm_file(ann_rm_file)
+            (ann_data, has_ann_hl), version = parse_rm_file(ann_rm_file)
             x_max, y_max, x_min, y_min = get_ann_max_bound(ann_data)
             offset_x = 0
             offset_y = 0
             is_ann_out_page = True
-            if doc_type in ["pdf", "epub"]:
+            if version == "V6":
                 offset_x = RM_WIDTH / 2
             if dims.height >= (RM_HEIGHT + 88 * 3):
                 offset_y = 3 * 88 # why 3 * text_offset? No clue, ask ReMarkable.

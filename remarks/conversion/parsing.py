@@ -247,10 +247,10 @@ def parse_rm_file(file_path, dims=None):
     is_v6 = header == expected_header_v6
 
     if is_v3 or is_v5:
-        return parse_v3_to_v5(data, dims, is_v3, nlayers, offset)
+        return parse_v3_to_v5(data, dims, is_v3, nlayers, offset), "V5"
 
     if is_v6:
-        return parse_v6(file_path)
+        return parse_v6(file_path), "V6"
 
     raise ValueError(
         f"{file_path} is not a valid .rm file: <header={header}><nlayers={nlayers}>"
@@ -361,4 +361,4 @@ def get_ann_max_bound(parsed_data):
         (minx, miny, maxx, maxy) = geom.MultiLineString(collection).bounds
         return (maxx, maxy, minx, miny)
     else:
-        return (0, 0)
+        return (0, 0, 0, 0)
