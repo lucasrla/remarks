@@ -131,24 +131,27 @@ def parse_v6(file_path):
         tree = SceneTree()
         blocks = read_blocks(f)
         build_tree(tree, blocks)
-        for el in tree.walk():
-            if isinstance(el, Line):
-                layer = output["layers"][0]
+        try:
+            for el in tree.walk():
+                if isinstance(el, Line):
+                    layer = output["layers"][0]
 
-                if el.points is None:
-                    break
-                pen = el.tool.value
-                color = el.color.value
-                opacity = 1
-                stroke_width = el.thickness_scale
+                    if el.points is None:
+                        break
+                    pen = el.tool.value
+                    color = el.color.value
+                    opacity = 1
+                    stroke_width = el.thickness_scale
 
-                tool, stroke_width, opacity = process_tool(pen, dims, stroke_width, opacity)
-                segment = create_seg_dict(opacity, stroke_width, color)
-                points_ = [(f"{p.x:.3f}", f"{p.y:.3f}") for p in el.points]
-                segment['points'].append(points_)
-                if tool not in layer["strokes"].keys():
-                    layer["strokes"] = update_stroke_dict(layer["strokes"], tool)
-                layer["strokes"][tool]["segments"].append(segment)
+                    tool, stroke_width, opacity = process_tool(pen, dims, stroke_width, opacity)
+                    segment = create_seg_dict(opacity, stroke_width, color)
+                    points_ = [(f"{p.x:.3f}", f"{p.y:.3f}") for p in el.points]
+                    segment['points'].append(points_)
+                    if tool not in layer["strokes"].keys():
+                        layer["strokes"] = update_stroke_dict(layer["strokes"], tool)
+                    layer["strokes"][tool]["segments"].append(segment)
+        except AssertionError:
+            print("ReMarkable broken data")
 
     return output, False
 
@@ -179,10 +182,13 @@ def determine_document_dimensions(file_path) -> ReMarkableDimensions:
         tree = SceneTree()
         build_tree(tree, blocks)
 
-        for el in tree.walk():
-            if isinstance(el, Line):
-                for p in el.points:
-                    update_boundaries_from_point(p.x, p.y, dims)
+        try:
+            for el in tree.walk():
+                if isinstance(el, Line):
+                    for p in el.points:
+                        update_boundaries_from_point(p.x, p.y, dims)
+        except AssertionError:
+            print("ReMarkable broken data")
 
     return ReMarkableDimensions(dims["x_max"] - dims["x_min"], dims["y_max"] - dims["y_min"])
 
