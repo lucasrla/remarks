@@ -266,6 +266,7 @@ def process_document(
 
         is_ann_out_page = False
 
+        scale = 1
         if "scribbles" in ann_type and has_ann:
             (ann_data, has_ann_hl), version = parse_rm_file(ann_rm_file)
             x_max, y_max, x_min, y_min = get_ann_max_bound(ann_data)
@@ -277,9 +278,11 @@ def process_document(
             if dims.height >= (RM_HEIGHT + 88 * 3):
                 offset_y = 3 * 88 # why 3 * text_offset? No clue, ask ReMarkable.
             if abs(x_min) + abs(x_max) > 1872:
-                ann_data = rescale_parsed_data(ann_data, RM_WIDTH / (max(x_max, 1872) - min(x_min, 0)), offset_x, offset_y)
+                scale = RM_WIDTH / (max(x_max, 1872) - min(x_min, 0))
+                ann_data = rescale_parsed_data(ann_data, scale, offset_x, offset_y)
             else:
-                ann_data = rescale_parsed_data(ann_data, RM_HEIGHT / (max(y_max, 2048) - min(y_min, 0)), offset_x, offset_y)
+                scale = RM_HEIGHT / (max(y_max, 2048) - min(y_min, 0))
+                ann_data = rescale_parsed_data(ann_data, scale, offset_x, offset_y)
         if "highlights" not in ann_type and has_ann_hl:
             logging.info(
                 "- Found highlighted text on page #{page_idx} but `--ann_type` flag is set to `scribbles` only, so we won't bother with it"
