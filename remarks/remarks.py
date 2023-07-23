@@ -1,13 +1,19 @@
 import logging
 import math
 import pathlib
-import random
 import sys
-from pprint import pprint
-from typing import List, Tuple
+from typing import List
 
 import fitz  # PyMuPDF
 
+from .conversion.drawing import (
+    draw_annotations_on_pdf,
+    add_smart_highlight_annotations,
+)
+from .conversion.ocrmypdf import (
+    is_executable_available,
+    run_ocr,
+)
 from .conversion.parsing import (
     parse_rm_file,
     rescale_parsed_data,
@@ -19,15 +25,7 @@ from .conversion.text import (
     extract_groups_from_smart_hl,
     prepare_md_from_hl_groups,
 )
-from .conversion.ocrmypdf import (
-    is_executable_available,
-    run_ocr,
-)
-from .conversion.drawing import (
-    draw_annotations_on_pdf,
-    add_smart_highlight_annotations,
-)
-from .dimensions import ReMarkableDimensions, REMARKABLE_DOCUMENT, PyMuPDFDimensions
+from .dimensions import ReMarkableDimensions, REMARKABLE_DOCUMENT
 from .utils import (
     is_document,
     get_document_filetype,
@@ -38,9 +36,8 @@ from .utils import (
     list_hl_json_files,
     load_json_file,
     prepare_subdir,
-    rescale_given_device_aspect_ratio,
     RM_WIDTH,
-    RM_HEIGHT,
+    RM_HEIGHT, is_inserted_page,
 )
 
 
@@ -166,6 +163,14 @@ def process_document(
         f = metadata_path.with_name(f"{metadata_path.stem}.pdf")
         pdf_src = fitz.open(f)
 
+        for i, page_idx in enumerate(pages_map):
+            if is_inserted_page(page_idx):
+                pdf_src.new_page(
+                    width=REMARKABLE_DOCUMENT.to_mm().to_mu().width,
+                    height=REMARKABLE_DOCUMENT.to_mm().to_mu().height,
+                    pno=i
+                )
+
     # Thanks to @apoorvkh
     # - https://github.com/lucasrla/remarks/issues/11#issuecomment-1287175782
     # - https://github.com/apoorvkh/remarks/blob/64dd3b586b96195b00e727fc1f1e537b90d841dc/remarks/remarks.py#L16-L38
@@ -179,20 +184,20 @@ def process_document(
         # terms of scale it is 445/1404 = ~0.316
         # Open an empty PDF to be treated as if it were the original document
         pdf_src = fitz.open()
-        pages_map: List[ReMarkableDimensions] = []
+        page_sizes: List[ReMarkableDimensions] = []
         for page in pages_list:
             paths = filter(lambda _ann_page: _ann_page.stem == page, ann_rm_files)
             path = next(paths, None)
             if path:
                 try:
-                    pages_map.append(determine_document_dimensions(path))
+                    page_sizes.append(determine_document_dimensions(path))
                 except ValueError:
-                    pages_map.append(REMARKABLE_DOCUMENT)
+                    page_sizes.append(REMARKABLE_DOCUMENT)
             else:
-                pages_map.append(REMARKABLE_DOCUMENT)
+                page_sizes.append(REMARKABLE_DOCUMENT)
 
         # For each note page, add a blank page to the original document
-        for i, dims in enumerate(pages_map):
+        for i, dims in enumerate(page_sizes):
             mu_dims = dims.to_mm().to_mu()
             pdf_src.new_page(
                 width=mu_dims.width,
@@ -206,6 +211,7 @@ def process_document(
 
     for page_uuid in pages_to_process:
         page_idx = pages_list.index(f"{page_uuid}")
+        print(f"processing page {page_idx}")
 
         ann_rm_file = None
         hl_json_file = None
@@ -276,7 +282,7 @@ def process_document(
             if version == "V6":
                 offset_x = RM_WIDTH / 2
             if dims.height >= (RM_HEIGHT + 88 * 3):
-                offset_y = 3 * 88 # why 3 * text_offset? No clue, ask ReMarkable.
+                offset_y = 3 * 88  # why 3 * text_offset? No clue, ask ReMarkable.
             if abs(x_min) + abs(x_max) > 1872:
                 scale = RM_WIDTH / (max(x_max, 1872) - min(x_min, 0))
                 ann_data = rescale_parsed_data(ann_data, scale, offset_x, offset_y)
@@ -331,7 +337,6 @@ def process_document(
         smart_hl_groups = []
         if "highlights" in ann_type and has_smart_hl:
             smart_hl_data = load_json_file(hl_json_file)
-            # print("smart_hl_data", smart_hl_data)
             ann_page = add_smart_highlight_annotations(smart_hl_data, ann_page, scale)
             smart_hl_groups = extract_groups_from_smart_hl(smart_hl_data)
 

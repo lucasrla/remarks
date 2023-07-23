@@ -51,9 +51,7 @@ def process_tool(pen, dims, w, opc):
     if tool == "Brush" or tool == "CalligraphyPen":
         pass
     elif tool == "Ballpoint" or tool == "Fineliner":
-        w = 32 * w * w - 116 * w + 107
-        if dims.width == RM_WIDTH and dims.height == RM_HEIGHT:  # defaults
-            w *= 1.8
+        pass
     elif tool == "Marker":
         w = (64 * w - 112) / 2
         opc = 0.9
@@ -143,7 +141,9 @@ def parse_v6(file_path):
                     opacity = 1
                     stroke_width = el.thickness_scale
 
+                    print("stroke_width before: "+  str(stroke_width))
                     tool, stroke_width, opacity = process_tool(pen, dims, stroke_width, opacity)
+                    print("stroke_width after: "+ str(stroke_width))
                     segment = create_seg_dict(opacity, stroke_width, color)
                     points_ = [(f"{p.x:.3f}", f"{p.y:.3f}") for p in el.points]
                     segment['points'].append(points_)
@@ -317,14 +317,13 @@ def parse_v3_to_v5(data, dims: ReMarkableDimensions, is_v3, nlayers, offset):
 
 # TODO: make the rescale part of the parsing (or perhaps drawing?) process
 def rescale_parsed_data(parsed_data, scale, offset_x, offset_y):
+    print(scale)
     for strokes in parsed_data["layers"]:
         for _, st_value in strokes["strokes"].items():
             for _, sg_value in enumerate(st_value["segments"]):
-                # print("sg_value", sg_value)
-
                 sg_value["style"][
                     "stroke-width"
-                ] = f"{float(sg_value['style']['stroke-width']) * scale:.3f}"
+                ] = f"{float(sg_value['style']['stroke-width']):.3f}"
 
                 for i, points in enumerate(sg_value["points"]):
                     for k, point in enumerate(points):
