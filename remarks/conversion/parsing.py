@@ -141,9 +141,7 @@ def parse_v6(file_path):
                     opacity = 1
                     stroke_width = el.thickness_scale
 
-                    print("stroke_width before: "+  str(stroke_width))
                     tool, stroke_width, opacity = process_tool(pen, dims, stroke_width, opacity)
-                    print("stroke_width after: "+ str(stroke_width))
                     segment = create_seg_dict(opacity, stroke_width, color)
                     points_ = [(f"{p.x:.3f}", f"{p.y:.3f}") for p in el.points]
                     segment['points'].append(points_)
