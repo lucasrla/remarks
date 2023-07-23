@@ -103,11 +103,12 @@ def construct_redirection_map(content: dict) -> List[int]:
     """
 
     redirection_map = []
-    for i, page in enumerate(content['cPages']['pages']):
-        if "redir" in page.keys():
-            redirection_map.append(page['redir']['value'])
-        else:
-            redirection_map.append(INSERTED_PAGE)
+    if "cPages" in content:
+        for i, page in enumerate(content['cPages']['pages']):
+            if "redir" in page:
+                redirection_map.append(page['redir']['value'])
+            else:
+                redirection_map.append(INSERTED_PAGE)
     return redirection_map
 
 
