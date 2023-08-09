@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="Black">
+    <option name="enabledOnReformat" value="true" />
+    <option name="enabledOnSave" value="true" />
+    <option name="sdkUUID" value="ce7cf4d4-5b0f-4b8e-9393-5eb9be1d6235" />
+  </component>
   <component name="ProjectRootManager" version="2" project-jdk-name="Poetry (remarks) (4)" project-jdk-type="Python SDK" />
 </project>
