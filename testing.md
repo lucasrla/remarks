@@ -8,6 +8,13 @@ different from the initially verified output.
 
 This type of testing is meant to verify that your output is as it is intended and to catch regressions!
 
+## Set-up
+
+1. [ ] Make sure you have our Python dependencies installed.
+2. [ ] ImageMagick should be installed; `convert` should be available in path
+3. [ ] ImageMagick might fail due to a Policy error, edit `/etc/ImageMagick-6/policy.xml` and comment out this line
+       `<policy domain="coder" rights="none" pattern="PDF" />`
+
 ## How we use snapshot testing to verify rendered PDFs stay the same after code changes
 
 So in our case, we render all pages of a pdf as jpg images and hash the contents.

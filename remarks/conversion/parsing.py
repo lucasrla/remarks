@@ -1,10 +1,11 @@
 import logging
 import math
 import struct
+from typing import Dict, List, Any, TypedDict, Tuple
 
 import shapely.geometry as geom  # Shapely
 from rmscene import read_blocks, SceneTree, build_tree
-from rmscene.scene_items import Line
+from rmscene.scene_items import Line, GlyphRange, Rectangle
 
 from ..utils import (
     RM_WIDTH,
@@ -46,7 +47,6 @@ RM_TOOLS = {
 
 def process_tool(pen, dims, w, opc):
     tool = RM_TOOLS[pen]
-    # print(tool)
 
     if tool == "Brush" or tool == "CalligraphyPen":
         pass
@@ -114,14 +114,22 @@ def update_boundaries_from_point(x, y, boundaries):
     boundaries["y_min"] = min(boundaries["y_min"], y)
 
 
-def parse_v6(file_path):
-    output = {
-        "layers": [
-            {
-                "strokes": {}
-            }
-        ]
-    }
+class TRemarksRectangle:
+    color: int
+    rectangles: List[Rectangle]
+
+
+class TLayer(TypedDict):
+    strokes: Dict[str, Any]
+    rectangles: List[TRemarksRectangle]
+
+
+class TLayers(TypedDict):
+    layers: List[TLayer]
+
+
+def parse_v6(file_path: str) -> Tuple[TLayers, bool]:
+    output: TLayers = {"layers": [{"strokes": {}, "rectangles": []}]}
 
     dims = determine_document_dimensions(file_path)
 
@@ -131,6 +139,13 @@ def parse_v6(file_path):
         build_tree(tree, blocks)
         try:
             for el in tree.walk():
+                if isinstance(el, GlyphRange):
+                    layer = output["layers"][0]
+                    highlight: TRemarksRectangle = {
+                        "rectangles": el.rectangles,
+                        "color": el.color.value,
+                    }
+                    layer["rectangles"].append(highlight)
                 if isinstance(el, Line):
                     layer = output["layers"][0]
 
@@ -141,10 +156,12 @@ def parse_v6(file_path):
                     opacity = 1
                     stroke_width = el.thickness_scale
 
-                    tool, stroke_width, opacity = process_tool(pen, dims, stroke_width, opacity)
+                    tool, stroke_width, opacity = process_tool(
+                        pen, dims, stroke_width, opacity
+                    )
                     segment = create_seg_dict(opacity, stroke_width, color)
                     points_ = [(f"{p.x:.3f}", f"{p.y:.3f}") for p in el.points]
-                    segment['points'].append(points_)
+                    segment["points"].append(points_)
                     if tool not in layer["strokes"].keys():
                         layer["strokes"] = update_stroke_dict(layer["strokes"], tool)
                     layer["strokes"][tool]["segments"].append(segment)
@@ -173,7 +190,7 @@ def determine_document_dimensions(file_path) -> ReMarkableDimensions:
         "x_min": -RM_WIDTH / 2,
         "x_max": RM_WIDTH / 2 - 1,
         "y_min": 0,
-        "y_max": RM_HEIGHT - 1
+        "y_max": RM_HEIGHT - 1,
     }
     with open(file_path, "rb") as f:
         blocks = read_blocks(f)
@@ -188,7 +205,9 @@ def determine_document_dimensions(file_path) -> ReMarkableDimensions:
         except AssertionError:
             print("ReMarkable broken data")
 
-    return ReMarkableDimensions(dims["x_max"] - dims["x_min"], dims["y_max"] - dims["y_min"])
+    return ReMarkableDimensions(
+        dims["x_max"] - dims["x_min"], dims["y_max"] - dims["y_min"]
+    )
 
 
 def check_rm_file_version(file_path):
@@ -225,7 +244,7 @@ def check_rm_file_version(file_path):
     return True
 
 
-def parse_rm_file(file_path, dims=None):
+def parse_rm_file(file_path: str, dims=None) -> Tuple[Tuple[TLayers, bool], str]:
     if dims is None:
         dims = REMARKABLE_DOCUMENT
     with open(file_path, "rb") as f:
@@ -262,16 +281,16 @@ def parse_rm_file(file_path, dims=None):
 
 
 def parse_v3_to_v5(data, dims: ReMarkableDimensions, is_v3, nlayers, offset):
-    output = {}
-    output["layers"] = []
+    output: TLayers = {
+        "layers": [],
+    }
     has_highlighter = False
     for _ in range(nlayers):
         fmt = "<I"
         (nstrokes,) = struct.unpack_from(fmt, data, offset)
         offset += struct.calcsize(fmt)
 
-        l = {}
-        l["strokes"] = {}
+        new_layer: TLayer = {"strokes": {}, "rectangles": []}
 
         for _ in range(nstrokes):
             if is_v3:
@@ -291,8 +310,8 @@ def parse_v3_to_v5(data, dims: ReMarkableDimensions, is_v3, nlayers, offset):
             if "Highlighter" in tool:
                 has_highlighter = True
 
-            if tool not in l["strokes"].keys():
-                l["strokes"] = update_stroke_dict(l["strokes"], tool)
+            if tool not in new_layer["strokes"].keys():
+                new_layer["strokes"] = update_stroke_dict(new_layer["strokes"], tool)
 
             sg = create_seg_dict(opacity, stroke_width, cc)
             p = []
@@ -306,18 +325,18 @@ def parse_v3_to_v5(data, dims: ReMarkableDimensions, is_v3, nlayers, offset):
                 p.append((f"{xpos:.3f}", f"{ypos:.3f}"))
 
             sg["points"].append(p)
-            # print("sg", sg)
-            l["strokes"][tool]["segments"].append(sg)
+            new_layer["strokes"][tool]["segments"].append(sg)
 
-        output["layers"].append(l)
+        output["layers"].append(new_layer)
     return output, has_highlighter
 
 
 # TODO: make the rescale part of the parsing (or perhaps drawing?) process
-def rescale_parsed_data(parsed_data, scale, offset_x, offset_y):
-    print(scale)
-    for strokes in parsed_data["layers"]:
-        for _, st_value in strokes["strokes"].items():
+def rescale_parsed_data(
+    parsed_data: TLayers, scale: float, offset_x: int, offset_y: int
+):
+    for layer in parsed_data["layers"]:
+        for _, st_value in layer["strokes"].items():
             for _, sg_value in enumerate(st_value["segments"]):
                 sg_value["style"][
                     "stroke-width"
@@ -329,6 +348,14 @@ def rescale_parsed_data(parsed_data, scale, offset_x, offset_y):
                             f"{float(point[0]) * scale + offset_x:.3f}",
                             f"{float(point[1]) * scale + offset_y:.3f}",
                         )
+
+    for layer in parsed_data["layers"]:
+        for rmRectangles in layer["rectangles"]:
+            for geomRectangle in rmRectangles["rectangles"]:
+                geomRectangle.x = geomRectangle.x + offset_x
+                geomRectangle.y = geomRectangle.y + offset_y
+                # geomRectangle.w = geomRectangle.w
+                # geomRectangle.h = geomRectangle.h
 
     return parsed_data
 
@@ -353,8 +380,10 @@ def get_ann_max_bound(parsed_data):
                     if len(points) <= 1:
                         # line needs at least two points, see testcase v2_notebook_complex
                         if not _line_segment_warning_has_been_shown:
-                            logging.warning("- Found a segment with a single point, will ignore it. Please report this "
-                                            "issue at: https://github.com/lucasrla/remarks/issues/64 ")
+                            logging.warning(
+                                "- Found a segment with a single point, will ignore it. Please report this "
+                                "issue at: https://github.com/lucasrla/remarks/issues/64 "
+                            )
                             _line_segment_warning_has_been_shown = True
                         continue
                     line = geom.LineString([(float(p[0]), float(p[1])) for p in points])

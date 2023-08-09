@@ -37,7 +37,7 @@ from .utils import (
     load_json_file,
     prepare_subdir,
     RM_WIDTH,
-    RM_HEIGHT, is_inserted_page,
+    RM_HEIGHT, is_inserted_page, get_document_tags,
 )
 
 
@@ -125,6 +125,8 @@ def process_document(
     md_header_format="atx",
 ):
     pages_list, pages_map = get_pages_data(metadata_path)
+    document_tags = "".join(get_document_tags(metadata_path))
+    print(f"tags: {document_tags}")
 
     if len(pages_list) == 0:
         return

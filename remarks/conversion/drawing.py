@@ -3,6 +3,7 @@ import logging
 import fitz  # PyMuPDF
 import shapely.geometry as geom  # Shapely
 
+from .parsing import TLayers
 from ..utils import (
     RM_WIDTH,
     RM_HEIGHT,
@@ -24,9 +25,7 @@ SC_COLOR_CODES = {
 }
 
 
-def draw_svg(data, dims={
-    "x": RM_WIDTH,
-    "y": RM_HEIGHT}):
+def draw_svg(data, dims={"x": RM_WIDTH, "y": RM_HEIGHT}):
     stroke_color = SC_COLOR_CODES
 
     output = f'<svg xmlns="http://www.w3.org/2000/svg" width="{dims["x"]}" height="{dims["y"]}">'
@@ -75,7 +74,7 @@ def draw_svg(data, dims={
     return output
 
 
-def prepare_segments(data):
+def prepare_segments(data: TLayers):
     segs = {}
 
     for layer in data["layers"]:
@@ -110,6 +109,23 @@ def prepare_segments(data):
 
                     if line.length > 0.0:
                         segs[name]["rects"].append(fitz.Rect(*line.bounds))
+        for i, rmRectangle in enumerate(layer["rectangles"]):
+            name = f"Highlighter_{i}"
+            segs[name] = {}
+
+            segs[name]["color-code"] = rmRectangle["color"]
+            segs[name]["points"] = []
+            segs[name]["lines"] = []
+            segs[name]["rects"] = []
+            for geomRectangle in rmRectangle["rectangles"]:
+                segs[name]["rects"].append(
+                    fitz.Rect(
+                        geomRectangle.x,
+                        geomRectangle.y,
+                        geomRectangle.x + geomRectangle.w,
+                        geomRectangle.y + geomRectangle.h,
+                    )
+                )
 
     return segs
 
@@ -165,9 +181,13 @@ def draw_annotations_on_pdf(data, page, inplace=False):
             # add all lines with the same tool-configuration to the same batch, using a key for their config
             if seg_type == "Eraser":
                 # overwrite color to always be white for erasers
-                batch_key = (seg_data['stroke-width'], seg_data['opacity'], 2)
+                batch_key = (seg_data["stroke-width"], seg_data["opacity"], 2)
             else:
-                batch_key = (seg_data['stroke-width'], seg_data['opacity'], seg_data['color-code'])
+                batch_key = (
+                    seg_data["stroke-width"],
+                    seg_data["opacity"],
+                    seg_data["color-code"],
+                )
 
             if batch_key in batched_lines_per_tool:
                 batch_points = batched_lines_per_tool[batch_key]
@@ -184,9 +204,7 @@ def draw_annotations_on_pdf(data, page, inplace=False):
         annot.set_border(width=stroke_width)
         annot.set_opacity(opacity)
 
-        color_array = fitz.utils.getColor(
-            SC_COLOR_CODES[color_code]
-        )
+        color_array = fitz.utils.getColor(SC_COLOR_CODES[color_code])
         annot.set_colors(stroke=color_array)
 
         annot.update()
@@ -200,12 +218,7 @@ def add_smart_highlight_annotations(hl_data, page, scale, inplace=False):
     hl_list = hl_data["highlights"][0]
 
     for hl in hl_list:
-        # print("hl=", hl)
-        # print("hl[text]:", hl["text"])
-
         quads = page.search_for(hl["text"], quads=True)
-        # print("len(quads)=", len(quads), "len(hl[rects])=", len(hl["rects"]))
-
         # Allowing for some padding around the hl["rects"]
         padding = 2
 
@@ -234,12 +247,10 @@ def add_smart_highlight_annotations(hl_data, page, scale, inplace=False):
             # `bounds` returns minimum bounding region (minx, miny, maxx, maxy)
 
             scaled_envelope = [float(coord) * scale for coord in envelope]
-            # print("scaled_envelope", scaled_envelope)
 
             quads = page.search_for(
                 hl["text"], quads=True, clip=fitz.Rect(scaled_envelope)
             )
-            # print("quads", quads)
 
         # If page.search_for cannot find hl["text"] in the PDF page
         # This fix was inspired by @danieluhricek posts at
@@ -258,8 +269,6 @@ def add_smart_highlight_annotations(hl_data, page, scale, inplace=False):
                 )
                 for rect in hl["rects"]
             ]
-
-            # print("quads", quads)
 
         annot = page.add_highlight_annot(quads)
 

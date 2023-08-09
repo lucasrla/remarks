@@ -1,7 +1,7 @@
 import json
 import pathlib
 from functools import cache
-from typing import Tuple, List
+from typing import Tuple, List, Generator
 
 # reMarkable's device dimensions
 RM_WIDTH = 1404
@@ -115,6 +115,12 @@ def construct_redirection_map(content: dict) -> List[int]:
 def is_inserted_page(idx: int) -> bool:
     return idx == INSERTED_PAGE
 
+
+def get_document_tags(path: str):
+    content = read_meta_file(path, suffix=".content")
+    if "tags" in content:
+        for tag in content['tags']:
+            yield tag['name']
 
 def get_pages_data(path: str) -> Tuple[List[str], List[int]]:
     content = read_meta_file(path, suffix=".content")

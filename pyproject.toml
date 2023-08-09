@@ -18,9 +18,10 @@ classifiers = [
 [tool.poetry.dependencies]
 python = "^3.10"
 Shapely = "^1.8.5.post1"
-PyMuPDF = "^1.20.2"
+PyMuPDF = "1.22.5"
 pytest = "^7.2.0"
 rmscene = "0.4.0"
+syrupy = "^4.0.8"
 
 [tool.poetry.dev-dependencies]
 black = "^22.12.0"
