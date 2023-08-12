@@ -290,14 +290,18 @@ version = "0.4.0"
 description = "Read v6 .rm files from the reMarkable tablet"
 category = "main"
 optional = false
-python-versions = ">=3.10,<4.0"
-files = [
-    {file = "rmscene-0.4.0-py3-none-any.whl", hash = "sha256:d821de053939e0d20eeb99315ea05b5a547e6780f088a6f14b82ea4444c97692"},
-    {file = "rmscene-0.4.0.tar.gz", hash = "sha256:ec37150a2c0d601c8f3f4e694d06872a5bbb413c6646e806ecdf4b28ba7ca10f"},
-]
+python-versions = "^3.10"
+files = []
+develop = false
 
 [package.dependencies]
-packaging = ">=23.0,<24.0"
+packaging = "^23.0"
+
+[package.source]
+type = "git"
+url = "git+ssh://git@github.com/azeirah/rmscene.git#prod"
+reference = "HEAD"
+resolved_reference = "286a4883549d0c8df8ca7dc002807e05753e405e"
 
 [[package]]
 name = "shapely"
@@ -387,4 +391,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "758a262ba102ed246c10b1f126e646109d52be65f3b1010f0d63ac6355fd1ba6"
+content-hash = "952cbefbb4891b195854dc3351a808a53319bf19c3d725a95cac2ae2e2762d2d"
