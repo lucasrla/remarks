@@ -132,8 +132,8 @@ def process_document(
         mod_pdf = fitz.open()
         pages_order = []
 
-    obsidian_markdown = ObsidianMarkdownFile()
-    obsidian_markdown.add_document_header(document)
+    obsidian_markdown = ObsidianMarkdownFile(document)
+    obsidian_markdown.add_document_header()
 
     for (
         page_uuid,

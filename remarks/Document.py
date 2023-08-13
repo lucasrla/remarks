@@ -25,7 +25,7 @@ class Document:
         self.name = get_visible_name(metadata_path)
 
         # annotations
-        self.rm_tags = get_document_tags(metadata_path)
+        self.rm_tags = list(get_document_tags(metadata_path))
         self.rm_annotation_files = list_ann_rm_files(metadata_path)
         self.rm_highlight_files = list_hl_json_files(metadata_path)
 
