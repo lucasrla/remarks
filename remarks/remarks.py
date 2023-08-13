@@ -2,7 +2,6 @@ import logging
 import pathlib
 import re
 import sys
-from pprint import pprint
 from typing import List
 
 import yaml
@@ -88,7 +87,6 @@ def run_remarks(
 
             in_device_dir = get_ui_path(metadata_path)
             out_path = pathlib.Path(f"{output_dir}/{in_device_dir}/{doc_name}/")
-            # print("out_path:", out_path)
 
             if file_path is not None and file_path not in str(in_device_dir):
                 continue
@@ -178,8 +176,7 @@ class ObsidianMarkdownFile:
                         joined_highlights.append(joined_highlight)
                         joined_highlight = []
 
-                highlight_content += f"""### [[{doc.name}.pdf#page={page_idx}|{doc.name}, page {page_idx}]]
-    """
+                highlight_content += f"### [[{doc.name}.pdf#page={page_idx}|{doc.name}, page {page_idx}]]\n"
 
                 for joined_highlight in joined_highlights:
                     highlight_text = " ".join(joined_highlight)
@@ -187,8 +184,6 @@ class ObsidianMarkdownFile:
 
                 highlight_content += "\n"
 
-        print(f"page: {page_idx}")
-        print(highlights)
         if highlight_content:
             self.page_content[page_idx] = highlight_content
 
@@ -421,7 +416,6 @@ def process_document(
         work_doc.close()
 
     out_doc_path_str = f"{out_path.parent}/{out_path.name}"
-    # print("out_doc_path_str:", out_doc_path_str)
 
     if combined_pdf:
         pdf_src.save(f"{out_doc_path_str} _remarks.pdf")
@@ -435,7 +429,6 @@ def process_document(
             range(len(pages_order)),
             key=pages_order.__getitem__,
         )
-        # print("pages_order:", pages_order)
         mod_pdf.select(pages_order)
         mod_pdf.save(f"{out_doc_path_str} _remarks-only.pdf")
         mod_pdf.close()
