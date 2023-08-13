@@ -13,6 +13,7 @@ from remarks.utils import (
     is_inserted_page,
     get_pages_data,
     list_ann_rm_files,
+    get_visible_name,
 )
 
 
@@ -21,9 +22,10 @@ class Document:
         self.metadata_path = metadata_path
         self.pages_list, self.pages_map = get_pages_data(metadata_path)
         self.doc_type = get_document_filetype(metadata_path)
+        self.name = get_visible_name(metadata_path)
 
         # annotations
-        self.rm_tags = "".join(get_document_tags(metadata_path))
+        self.rm_tags = get_document_tags(metadata_path)
         self.rm_annotation_files = list_ann_rm_files(metadata_path)
         self.rm_highlight_files = list_hl_json_files(metadata_path)
 

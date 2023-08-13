@@ -22,6 +22,7 @@ PyMuPDF = "1.22.5"
 pytest = "^7.2.0"
 rmscene = { git = "https://github.com/azeirah/rmscene.git#prod"}
 syrupy = "^4.0.8"
+pyyaml = "^6.0.1"
 
 [tool.poetry.dev-dependencies]
 black = "^22.12.0"

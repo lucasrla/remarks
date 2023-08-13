@@ -126,10 +126,11 @@ class TLayer(TypedDict):
 
 class TLayers(TypedDict):
     layers: List[TLayer]
+    highlights: List[str]
 
 
 def parse_v6(file_path: str) -> Tuple[TLayers, bool]:
-    output: TLayers = {"layers": [{"strokes": {}, "rectangles": []}]}
+    output: TLayers = {"layers": [{"strokes": {}, "rectangles": []}], "highlights": []}
 
     dims = determine_document_dimensions(file_path)
 
@@ -146,6 +147,7 @@ def parse_v6(file_path: str) -> Tuple[TLayers, bool]:
                         "color": el.color.value,
                     }
                     layer["rectangles"].append(highlight)
+                    output["highlights"].append(el)
                 if isinstance(el, Line):
                     layer = output["layers"][0]
 
@@ -281,9 +283,7 @@ def parse_rm_file(file_path: str, dims=None) -> Tuple[Tuple[TLayers, bool], str]
 
 
 def parse_v3_to_v5(data, dims: ReMarkableDimensions, is_v3, nlayers, offset):
-    output: TLayers = {
-        "layers": [],
-    }
+    output: TLayers = {"layers": [], "highlights": []}
     has_highlighter = False
     for _ in range(nlayers):
         fmt = "<I"
