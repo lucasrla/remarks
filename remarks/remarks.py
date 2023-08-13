@@ -17,7 +17,9 @@ from .conversion.ocrmypdf import (
 from .conversion.parsing import (
     parse_rm_file,
     rescale_parsed_data,
-    get_ann_max_bound, determine_document_dimensions, check_rm_file_version,
+    get_ann_max_bound,
+    determine_document_dimensions,
+    check_rm_file_version,
 )
 from .conversion.text import (
     check_if_text_extractable,
@@ -37,7 +39,9 @@ from .utils import (
     load_json_file,
     prepare_subdir,
     RM_WIDTH,
-    RM_HEIGHT, is_inserted_page, get_document_tags,
+    RM_HEIGHT,
+    is_inserted_page,
+    get_document_tags,
 )
 
 
@@ -90,7 +94,7 @@ def run_remarks(
             if file_path is not None and file_path not in str(in_device_dir):
                 continue
 
-            process_document(metadata_path, out_path, doc_type, **kwargs)
+            process_document(metadata_path, out_path, **kwargs)
         else:
             logging.info(
                 f'\nFile skipped: "{doc_name}" ({metadata_path.stem}) due to unsupported filetype: {doc_type}. remarks only supports: {", ".join(supported_types)}'
@@ -108,11 +112,112 @@ A4 has a size of 210x297mm.
 """
 
 
+class Document:
+    def __init__(self, metadata_path):
+        self.metadata_path = metadata_path
+        self.pages_list, self.pages_map = get_pages_data(metadata_path)
+        self.doc_type = get_document_filetype(metadata_path)
+
+        # annotations
+        self.rm_tags = "".join(get_document_tags(metadata_path))
+        self.rm_annotation_files = list_ann_rm_files(metadata_path)
+        self.rm_highlight_files = list_hl_json_files(metadata_path)
+
+    def open_source_pdf(self) -> fitz.Document:
+        if self.doc_type in ["pdf", "epub"]:
+            f = self.metadata_path.with_name(f"{self.metadata_path.stem}.pdf")
+            pdf_src = fitz.open(f)
+
+            for i, page_idx in enumerate(self.pages_map):
+                if is_inserted_page(page_idx):
+                    pdf_src.new_page(
+                        width=REMARKABLE_DOCUMENT.to_mm().to_mu().width,
+                        height=REMARKABLE_DOCUMENT.to_mm().to_mu().height,
+                        pno=i,
+                    )
+
+        # Thanks to @apoorvkh
+        # - https://github.com/lucasrla/remarks/issues/11#issuecomment-1287175782
+        # - https://github.com/apoorvkh/remarks/blob/64dd3b586b96195b00e727fc1f1e537b90d841dc/remarks/remarks.py#L16-L38
+        elif self.doc_type == "notebook":
+            # PyMuPDF's A4 default is width=595, height=842
+            # - https://pymupdf.readthedocs.io/en/latest/document.html#Document.new_page
+            # The 0.42 below is just me eye-balling PyMuPDF's defaults:
+            # 1404*0.42 ~= 590 and 1872*0.4 ~= 786
+            #
+            # reMarkable's desktop app exports notebooks to PDF with 445 x 594, in
+            # terms of scale it is 445/1404 = ~0.316
+            # Open an empty PDF to be treated as if it were the original document
+            pdf_src = fitz.open()
+            page_sizes: List[ReMarkableDimensions] = []
+            for page in self.pages_list:
+                paths = filter(
+                    lambda _ann_page: _ann_page.stem == page, self.rm_annotation_files
+                )
+                path = next(paths, None)
+                if path:
+                    try:
+                        page_sizes.append(determine_document_dimensions(path))
+                    except ValueError:
+                        page_sizes.append(REMARKABLE_DOCUMENT)
+                else:
+                    page_sizes.append(REMARKABLE_DOCUMENT)
+
+            # For each note page, add a blank page to the original document
+            for i, dims in enumerate(page_sizes):
+                mu_dims = dims.to_mm().to_mu()
+                pdf_src.new_page(
+                    width=mu_dims.width,
+                    height=mu_dims.height,
+                    pno=i,
+                )
+
+        return pdf_src
+
+    def pages_magnitude(self):
+        return math.floor(math.log10(len(self.pages_list))) + 1
+
+    def pages(self):
+        has_annotation_highlights = False
+
+        page_uuids = set(
+            [f.stem for f in self.rm_annotation_files]
+            + [f.stem for f in self.rm_highlight_files]
+        )
+
+        for page_uuid in page_uuids:
+            has_annotations = False
+            rm_annotation_file = None
+
+            rm_highgights_file = None
+            has_smart_highlights = False
+
+            page_idx = self.pages_list.index(f"{page_uuid}")
+
+            for f in self.rm_annotation_files:
+                if page_uuid == f.stem and check_rm_file_version(f):
+                    rm_annotation_file = f
+                    has_annotations = True
+
+            for f in self.rm_highlight_files:
+                if page_uuid == f.stem:
+                    rm_highgights_file = f
+                    has_smart_highlights = True
+
+            yield (
+                page_uuid,
+                page_idx,
+                rm_annotation_file,
+                has_annotations,
+                rm_highgights_file,
+                has_smart_highlights,
+            )
+
+
 # TODO: review args
 def process_document(
     metadata_path,
     out_path,
-    doc_type,
     per_page_targets=None,
     ann_type=None,
     combined_pdf=False,
@@ -124,34 +229,10 @@ def process_document(
     md_page_offset=0,
     md_header_format="atx",
 ):
-    pages_list, pages_map = get_pages_data(metadata_path)
-    document_tags = "".join(get_document_tags(metadata_path))
-    print(f"tags: {document_tags}")
+    document = Document(metadata_path)
+    pdf_src = document.open_source_pdf()
 
-    if len(pages_list) == 0:
-        return
-
-    pages_magnitude = math.floor(math.log10(len(pages_list))) + 1
-
-    ann_rm_files = list_ann_rm_files(metadata_path)  # scribbles
-    # print("ann_rm_files", ann_rm_files)
-    hl_json_files = list_hl_json_files(metadata_path)  # highlights
-    # print("hl_json_files", hl_json_files)
-
-    if ann_type == "scribbles" and len(ann_rm_files) == 0:
-        logging.info(
-            "- scribbles were requested, no scribbles were found in this document."
-        )
-
-    if ann_type == "highlights" and len(hl_json_files) == 0 and len(ann_rm_files) == 0:
-        logging.info(
-            "- highlights were requested, no highlights were found in this document"
-        )
-
-    if len(hl_json_files) == 0 and len(ann_rm_files) == 0:
-        logging.info(
-            "- Found no highlights nor scribbles in this document"
-        )
+    pages_magnitude = document.pages_magnitude()
 
     if combined_md:
         combined_md_strs = []
@@ -160,86 +241,26 @@ def process_document(
         mod_pdf = fitz.open()
         pages_order = []
 
-    # Open the original PDF source document
-    if doc_type in ["pdf", "epub"]:
-        f = metadata_path.with_name(f"{metadata_path.stem}.pdf")
-        pdf_src = fitz.open(f)
-
-        for i, page_idx in enumerate(pages_map):
-            if is_inserted_page(page_idx):
-                pdf_src.new_page(
-                    width=REMARKABLE_DOCUMENT.to_mm().to_mu().width,
-                    height=REMARKABLE_DOCUMENT.to_mm().to_mu().height,
-                    pno=i
-                )
-
-    # Thanks to @apoorvkh
-    # - https://github.com/lucasrla/remarks/issues/11#issuecomment-1287175782
-    # - https://github.com/apoorvkh/remarks/blob/64dd3b586b96195b00e727fc1f1e537b90d841dc/remarks/remarks.py#L16-L38
-    elif doc_type == "notebook":
-        # PyMuPDF's A4 default is width=595, height=842
-        # - https://pymupdf.readthedocs.io/en/latest/document.html#Document.new_page
-        # The 0.42 below is just me eye-balling PyMuPDF's defaults:
-        # 1404*0.42 ~= 590 and 1872*0.4 ~= 786
-        #
-        # reMarkable's desktop app exports notebooks to PDF with 445 x 594, in
-        # terms of scale it is 445/1404 = ~0.316
-        # Open an empty PDF to be treated as if it were the original document
-        pdf_src = fitz.open()
-        page_sizes: List[ReMarkableDimensions] = []
-        for page in pages_list:
-            paths = filter(lambda _ann_page: _ann_page.stem == page, ann_rm_files)
-            path = next(paths, None)
-            if path:
-                try:
-                    page_sizes.append(determine_document_dimensions(path))
-                except ValueError:
-                    page_sizes.append(REMARKABLE_DOCUMENT)
-            else:
-                page_sizes.append(REMARKABLE_DOCUMENT)
-
-        # For each note page, add a blank page to the original document
-        for i, dims in enumerate(page_sizes):
-            mu_dims = dims.to_mm().to_mu()
-            pdf_src.new_page(
-                width=mu_dims.width,
-                height=mu_dims.height,
-                pno=i,
-            )
-
-    pages_to_process = set(
-        [f.stem for f in ann_rm_files] + [f.stem for f in hl_json_files]
-    )
-
-    for page_uuid in pages_to_process:
-        page_idx = pages_list.index(f"{page_uuid}")
+    for (
+        page_uuid,
+        page_idx,
+        rm_annotation_file,
+        has_annotations,
+        rm_highgights_file,
+        has_smart_highlights,
+    ) in document.pages():
         print(f"processing page {page_idx}")
 
-        ann_rm_file = None
-        hl_json_file = None
-
-        has_ann = False
-        has_smart_hl = False
         has_ann_hl = False
-
-        for f in ann_rm_files:
-            if page_uuid == f.stem and check_rm_file_version(f):
-                ann_rm_file = f
-                has_ann = True
-
-        for f in hl_json_files:
-            if page_uuid == f.stem:
-                hl_json_file = f
-                has_smart_hl = True
 
         # Create a new PDF document to hold the page that will be annotated
         work_doc = fitz.open()
 
         # Get document page dimensions and calculate what scale should be
         # applied to fit it into the device (given the device's own dimensions)
-        if ann_rm_file:
+        if rm_annotation_file:
             try:
-                dims = determine_document_dimensions(ann_rm_file)
+                dims = determine_document_dimensions(rm_annotation_file)
             except ValueError:
                 dims = REMARKABLE_DOCUMENT
         else:
@@ -275,8 +296,8 @@ def process_document(
         is_ann_out_page = False
 
         scale = 1
-        if "scribbles" in ann_type and has_ann:
-            (ann_data, has_ann_hl), version = parse_rm_file(ann_rm_file)
+        if "scribbles" in ann_type and has_annotations:
+            (ann_data, has_ann_hl), version = parse_rm_file(rm_annotation_file)
             x_max, y_max, x_min, y_min = get_ann_max_bound(ann_data)
             offset_x = 0
             offset_y = 0
@@ -305,7 +326,7 @@ def process_document(
         # TODO: isn't it faster to run ocr through the whole PDF document at
         # once? (as opposed to doing it per page)
         if (
-            doc_type == "pdf"
+            document.doc_type == "pdf"
             and "highlights" in ann_type
             and has_ann_hl
             and not is_text_extractable
@@ -316,7 +337,7 @@ def process_document(
             work_doc, ann_page = process_ocr(work_doc)
             is_ocred = True
 
-        if has_ann:
+        if has_annotations:
             ann_page = draw_annotations_on_pdf(ann_data, ann_page)
 
         # TODO: add ability to extract highlighted images / tables (via pixmaps)?
@@ -331,14 +352,14 @@ def process_document(
                 ann_page,
                 malformed=assume_malformed_pdfs,
             )
-        elif "highlights" in ann_type and has_ann_hl and doc_type == "pdf":
+        elif "highlights" in ann_type and has_ann_hl and document.doc_type == "pdf":
             logging.info(
                 f"- Found highlights on page #{page_idx} but couldn't extract them to Markdown. Maybe run it through OCRmyPDF next time?"
             )
 
         smart_hl_groups = []
-        if "highlights" in ann_type and has_smart_hl:
-            smart_hl_data = load_json_file(hl_json_file)
+        if "highlights" in ann_type and has_smart_highlights:
+            smart_hl_data = load_json_file(rm_highgights_file)
             ann_page = add_smart_highlight_annotations(smart_hl_data, ann_page, scale)
             smart_hl_groups = extract_groups_from_smart_hl(smart_hl_data)
 
@@ -351,7 +372,7 @@ def process_document(
                 presentation=md_hl_format,
             )
 
-        if per_page_targets and (has_ann or has_smart_hl):
+        if per_page_targets and (has_annotations or has_smart_highlights):
             out_path.mkdir(parents=True, exist_ok=True)
 
             if "pdf" in per_page_targets:
@@ -382,11 +403,11 @@ def process_document(
                 with open(f"{subdir}/{page_idx:0{pages_magnitude}}.md", "w") as f:
                     f.write(hl_text)
 
-        if modified_pdf and (has_ann or has_smart_hl):
+        if modified_pdf and (has_annotations or has_smart_highlights):
             mod_pdf.insert_pdf(work_doc, start_at=-1)
             pages_order.append(page_idx)
 
-        if combined_md and (has_ann_hl or has_smart_hl):
+        if combined_md and (has_ann_hl or has_smart_highlights):
             combined_md_strs += [(page_idx + md_page_offset, hl_text + "\n")]
 
         # If there are annotations outside the original page limits
@@ -399,14 +420,14 @@ def process_document(
         # Else, draw annotations on the original PDF page (in-place) to do
         # our best to preserve in-PDF links and the original page size
         elif combined_pdf:
-            if has_ann:
+            if has_annotations:
                 draw_annotations_on_pdf(
                     ann_data,
                     pdf_src[page_idx],
                     inplace=True,
                 )
 
-            if has_smart_hl:
+            if has_smart_highlights:
                 add_smart_highlight_annotations(
                     smart_hl_data,
                     pdf_src[page_idx],
@@ -422,7 +443,7 @@ def process_document(
     if combined_pdf:
         pdf_src.save(f"{out_doc_path_str} _remarks.pdf")
 
-    if modified_pdf and (doc_type == "notebook" and combined_pdf):
+    if modified_pdf and (document.doc_type == "notebook" and combined_pdf):
         logging.info(
             "- You asked for the modified PDF, but we won't bother generated it for this notebook. It would be the same as the combined PDF, which you're already getting anyway"
         )
