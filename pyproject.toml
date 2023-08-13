@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "remarks"
-version = "0.3.7"
+version = "0.3.8"
 description = "Extract annotations (highlights and scribbles) from PDF, EPUB, and notebooks marked with reMarkable™ paper tablets. Export to Markdown, PDF, PNG, and SVG."
 authors = ["lucasrla <lucasrla@users.noreply.github.com>"]
 readme = "README.md"
