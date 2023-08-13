@@ -174,7 +174,6 @@ class ObsidianMarkdownFile:
                 for current, next in paired_highlights:
                     distance = next.start - (current.start + current.length)
                     joined_highlight.append(current.text)
-                    print(next)
                     if distance > 2:
                         joined_highlights.append(joined_highlight)
                         joined_highlight = []
