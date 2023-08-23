@@ -351,7 +351,7 @@ packaging = "^23.0"
 type = "git"
 url = "https://github.com/azeirah/rmscene.git"
 reference = "prod"
-resolved_reference = "a1cff6345eeac3cdede08ec0ddb378b897712917"
+resolved_reference = "ad08e9cb069eaabb571549d94cd5023f81f2213d"
 
 [[package]]
 name = "shapely"
