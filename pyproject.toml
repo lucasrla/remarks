@@ -20,7 +20,7 @@ python = "^3.10"
 Shapely = "^1.8.5.post1"
 PyMuPDF = "1.22.5"
 pytest = "^7.2.0"
-rmscene = { git = "https://github.com/azeirah/rmscene.git#prod"}
+rmscene = { git = "https://github.com/azeirah/rmscene.git", branch = "prod" }
 syrupy = "^4.0.8"
 pyyaml = "^6.0.1"
 
