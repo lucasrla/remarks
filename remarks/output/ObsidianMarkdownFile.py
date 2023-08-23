@@ -53,7 +53,10 @@ class ObsidianMarkdownFile:
     ):
         highlight_content = ""
         joined_highlights = []
-        highlights = sorted(highlights, key=lambda h: h.start)
+        highlights = sorted(
+            [highlight for highlight in highlights if highlight.start is not None],
+            key=lambda h: h.start,
+        )
         if len(highlights) > 0:
             if len(highlights) == 1:
                 highlight_content += f"""### [[{doc.name}.pdf#page={page_idx}|{doc.name}, page {page_idx}]]
