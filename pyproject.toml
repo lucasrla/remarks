@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "remarks"
-version = "0.3.1"
+version = "0.3.10"
 description = "Extract annotations (highlights and scribbles) from PDF, EPUB, and notebooks marked with reMarkable™ paper tablets. Export to Markdown, PDF, PNG, and SVG."
 authors = ["lucasrla <lucasrla@users.noreply.github.com>"]
 readme = "README.md"
@@ -16,9 +16,13 @@ classifiers = [
 
 # https://python-poetry.org/docs/dependency-specification/
 [tool.poetry.dependencies]
-python = "^3.10.9"
-Shapely = "^2.0.1"
-PyMuPDF = "^1.21.1"
+python = "^3.10"
+Shapely = "^1.8.5.post1"
+PyMuPDF = "1.22.5"
+pytest = "^7.2.0"
+rmscene = { git = "https://github.com/azeirah/rmscene.git", branch = "prod" }
+syrupy = "^4.0.8"
+pyyaml = "^6.0.1"
 
 [tool.poetry.dev-dependencies]
 black = "^22.12.0"

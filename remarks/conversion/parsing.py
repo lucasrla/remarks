@@ -1,12 +1,18 @@
 import logging
+import math
 import struct
+from typing import Dict, List, Any, TypedDict, Tuple
 
 import shapely.geometry as geom  # Shapely
+from rmscene import read_blocks, SceneTree, build_tree
+from rmscene.scene_items import Line, GlyphRange, Rectangle
 
 from ..utils import (
     RM_WIDTH,
     RM_HEIGHT,
 )
+
+from ..dimensions import ReMarkableDimensions, REMARKABLE_DOCUMENT
 
 # reMarkable tools
 # http://web.archive.org/web/20190806120447/https://support.remarkable.com/hc/en-us/articles/115004558545-5-1-Tools-Overview
@@ -41,14 +47,11 @@ RM_TOOLS = {
 
 def process_tool(pen, dims, w, opc):
     tool = RM_TOOLS[pen]
-    # print(tool)
 
     if tool == "Brush" or tool == "CalligraphyPen":
         pass
     elif tool == "Ballpoint" or tool == "Fineliner":
-        w = 32 * w * w - 116 * w + 107
-        if dims["x"] == RM_WIDTH and dims["y"] == RM_HEIGHT:  # defaults
-            w *= 1.8
+        pass
     elif tool == "Marker":
         w = (64 * w - 112) / 2
         opc = 0.9
@@ -57,7 +60,7 @@ def process_tool(pen, dims, w, opc):
         opc = 0.6
         # cc = 3
     elif tool == "Eraser":
-        w = 1280 * w * w - 4800 * w + 4510
+        w = w * 18 * 2.3
         # cc = 2
     elif tool == "SharpPencil" or tool == "TiltPencil":
         w = 16 * w - 27
@@ -75,15 +78,15 @@ def process_tool(pen, dims, w, opc):
     return name_code, w, opc
 
 
-def adjust_xypos_sizes(xpos, ypos, dims):
-    ratio = (dims["y"] / dims["x"]) / (RM_HEIGHT / RM_WIDTH)
+def adjust_xypos_sizes(xpos, ypos, dims: ReMarkableDimensions):
+    ratio = (dims.height / dims.height) / (RM_HEIGHT / RM_WIDTH)
 
     if ratio > 1:
-        xpos = ratio * ((xpos * dims["x"]) / RM_WIDTH)
-        ypos = (ypos * dims["y"]) / RM_HEIGHT
+        xpos = ratio * ((xpos * dims.height) / RM_WIDTH)
+        ypos = (ypos * dims.height) / RM_HEIGHT
     else:
-        xpos = (xpos * dims["x"]) / RM_WIDTH
-        ypos = (1 / ratio) * (ypos * dims["y"]) / RM_HEIGHT
+        xpos = (xpos * dims.height) / RM_WIDTH
+        ypos = (1 / ratio) * (ypos * dims.height) / RM_HEIGHT
 
     return xpos, ypos
 
@@ -104,10 +107,114 @@ def create_seg_dict(opacity, stroke_width, cc):
     return sg
 
 
+def update_boundaries_from_point(x, y, boundaries):
+    boundaries["x_max"] = max(boundaries["x_max"], x)
+    boundaries["y_max"] = max(boundaries["y_max"], y)
+    boundaries["x_min"] = min(boundaries["x_min"], x)
+    boundaries["y_min"] = min(boundaries["y_min"], y)
+
+
+class TRemarksRectangle:
+    color: int
+    rectangles: List[Rectangle]
+
+
+class TLayer(TypedDict):
+    strokes: Dict[str, Any]
+    rectangles: List[TRemarksRectangle]
+
+
+class TLayers(TypedDict):
+    layers: List[TLayer]
+    highlights: List[str]
+
+
+def parse_v6(file_path: str) -> Tuple[TLayers, bool]:
+    output: TLayers = {"layers": [{"strokes": {}, "rectangles": []}], "highlights": []}
+
+    dims = determine_document_dimensions(file_path)
+
+    with open(file_path, "rb") as f:
+        tree = SceneTree()
+        blocks = read_blocks(f)
+        build_tree(tree, blocks)
+        try:
+            for el in tree.walk():
+                if isinstance(el, GlyphRange):
+                    layer = output["layers"][0]
+                    highlight: TRemarksRectangle = {
+                        "rectangles": el.rectangles,
+                        "color": el.color.value,
+                    }
+                    layer["rectangles"].append(highlight)
+                    output["highlights"].append(el)
+                if isinstance(el, Line):
+                    layer = output["layers"][0]
+
+                    if el.points is None:
+                        break
+                    pen = el.tool.value
+                    color = el.color.value
+                    opacity = 1
+                    stroke_width = el.thickness_scale
+
+                    tool, stroke_width, opacity = process_tool(
+                        pen, dims, stroke_width, opacity
+                    )
+                    segment = create_seg_dict(opacity, stroke_width, color)
+                    points_ = [(f"{p.x:.3f}", f"{p.y:.3f}") for p in el.points]
+                    segment["points"].append(points_)
+                    if tool not in layer["strokes"].keys():
+                        layer["strokes"] = update_stroke_dict(layer["strokes"], tool)
+                    layer["strokes"][tool]["segments"].append(segment)
+        except AssertionError:
+            print("ReMarkable broken data")
+
+    return output, False
+
+
+def roundup(num, increment):
+    return int(math.ceil(num / increment)) * increment
+
+
+def rounddown(num, increment):
+    return int(math.floor(num / increment)) * increment
+
+
+def determine_document_dimensions(file_path) -> ReMarkableDimensions:
+    """The ReMarkable has dynamic document size in v6. The dimensions are not available anywhere, so we'll compute
+    them from points"""
+    # This is the horizontal space you get as defined by ReMarkable.
+    # Not coincidentally, this is (RM_HEIGHT - RM_WIDTH)/2
+    # Adding two increments, which is the max, you end up with an exactly square aspect ratio
+    # hori = (RM_HEIGHT - RM_WIDTH) / 2
+    dims = {
+        "x_min": -RM_WIDTH / 2,
+        "x_max": RM_WIDTH / 2 - 1,
+        "y_min": 0,
+        "y_max": RM_HEIGHT - 1,
+    }
+    with open(file_path, "rb") as f:
+        blocks = read_blocks(f)
+        tree = SceneTree()
+        build_tree(tree, blocks)
+
+        try:
+            for el in tree.walk():
+                if isinstance(el, Line):
+                    for p in el.points:
+                        update_boundaries_from_point(p.x, p.y, dims)
+        except AssertionError:
+            print("ReMarkable broken data")
+
+    return ReMarkableDimensions(
+        dims["x_max"] - dims["x_min"], dims["y_max"] - dims["y_min"]
+    )
+
+
 def check_rm_file_version(file_path):
     with open(file_path, "rb") as f:
         data = f.read()
-    # print("data:", data)
 
     expected_header_fmt = b"reMarkable .lines file, version=0          "
 
@@ -125,10 +232,10 @@ def check_rm_file_version(file_path):
     is_v6 = header == b"reMarkable .lines file, version=6          "
 
     if is_v6:
-        logging.error(
-            f"- Found a v6 .rm file ({file_path}) created with reMarkable software >= 3.0. Unfortunately we do not support this version yet. More info: https://github.com/lucasrla/remarks/issues/58"
-        )
-        return False
+        return True
+        # logging.error(
+        #     f"- Found a v6 .rm file ({file_path}) created with reMarkable software >= 3.0. Unfortunately we do not support this version yet. More info: https://github.com/lucasrla/remarks/issues/58"
+        # )
 
     if (not is_v3 and not is_v5) or nlayers < 1:
         logging.error(
@@ -139,37 +246,51 @@ def check_rm_file_version(file_path):
     return True
 
 
-def parse_rm_file(file_path, dims={
-    "x": RM_WIDTH,
-    "y": RM_HEIGHT}):
+def parse_rm_file(file_path: str, dims=None) -> Tuple[Tuple[TLayers, bool], str]:
+    if dims is None:
+        dims = REMARKABLE_DOCUMENT
     with open(file_path, "rb") as f:
         data = f.read()
 
     expected_header_fmt = b"reMarkable .lines file, version=0          "
 
+    expected_header_v3 = b"reMarkable .lines file, version=3          "
+    expected_header_v5 = b"reMarkable .lines file, version=5          "
+    expected_header_v6 = b"reMarkable .lines file, version=6          "
+    if len(data) < len(expected_header_v5) + 4:
+        raise ValueError(f"{file_path} is too short to be a valid .rm file")
+
     offset = 0
     fmt = f"<{len(expected_header_fmt)}sI"
 
     header, nlayers = struct.unpack_from(fmt, data, offset)
-    # print("header, nlayers", header, nlayers)
 
     offset += struct.calcsize(fmt)
 
-    is_v3 = header == b"reMarkable .lines file, version=3          "
-    is_v5 = header == b"reMarkable .lines file, version=5          "
+    is_v3 = header == expected_header_v3
+    is_v5 = header == expected_header_v5
+    is_v6 = header == expected_header_v6
 
-    output = {}
-    output["layers"] = []
+    if is_v3 or is_v5:
+        return parse_v3_to_v5(data, dims, is_v3, nlayers, offset), "V5"
 
+    if is_v6:
+        return parse_v6(file_path), "V6"
+
+    raise ValueError(
+        f"{file_path} is not a valid .rm file: <header={header}><nlayers={nlayers}>"
+    )
+
+
+def parse_v3_to_v5(data, dims: ReMarkableDimensions, is_v3, nlayers, offset):
+    output: TLayers = {"layers": [], "highlights": []}
     has_highlighter = False
-
     for _ in range(nlayers):
         fmt = "<I"
         (nstrokes,) = struct.unpack_from(fmt, data, offset)
         offset += struct.calcsize(fmt)
 
-        l = {}
-        l["strokes"] = {}
+        new_layer: TLayer = {"strokes": {}, "rectangles": []}
 
         for _ in range(nstrokes):
             if is_v3:
@@ -177,7 +298,7 @@ def parse_rm_file(file_path, dims={
                 # cc for color-code, w for stroke-width
                 pen, cc, _, w, nsegs = struct.unpack_from(fmt, data, offset)
                 offset += struct.calcsize(fmt)
-            if is_v5:
+            else:
                 fmt = "<IIIffI"
                 pen, cc, _, w, _, nsegs = struct.unpack_from(fmt, data, offset)
                 offset += struct.calcsize(fmt)
@@ -189,8 +310,8 @@ def parse_rm_file(file_path, dims={
             if "Highlighter" in tool:
                 has_highlighter = True
 
-            if tool not in l["strokes"].keys():
-                l["strokes"] = update_stroke_dict(l["strokes"], tool)
+            if tool not in new_layer["strokes"].keys():
+                new_layer["strokes"] = update_stroke_dict(new_layer["strokes"], tool)
 
             sg = create_seg_dict(opacity, stroke_width, cc)
             p = []
@@ -204,34 +325,37 @@ def parse_rm_file(file_path, dims={
                 p.append((f"{xpos:.3f}", f"{ypos:.3f}"))
 
             sg["points"].append(p)
-            # print("sg", sg)
-            l["strokes"][tool]["segments"].append(sg)
+            new_layer["strokes"][tool]["segments"].append(sg)
 
-        output["layers"].append(l)
-
+        output["layers"].append(new_layer)
     return output, has_highlighter
 
 
 # TODO: make the rescale part of the parsing (or perhaps drawing?) process
-def rescale_parsed_data(parsed_data, scale):
-    if scale == 1:
-        return parsed_data
-
-    for strokes in parsed_data["layers"]:
-        for _, st_value in strokes["strokes"].items():
+def rescale_parsed_data(
+    parsed_data: TLayers, scale: float, offset_x: int, offset_y: int
+):
+    for layer in parsed_data["layers"]:
+        for _, st_value in layer["strokes"].items():
             for _, sg_value in enumerate(st_value["segments"]):
-                # print("sg_value", sg_value)
-
                 sg_value["style"][
                     "stroke-width"
-                ] = f"{float(sg_value['style']['stroke-width']) * scale:.3f}"
+                ] = f"{float(sg_value['style']['stroke-width']):.3f}"
 
                 for i, points in enumerate(sg_value["points"]):
                     for k, point in enumerate(points):
                         sg_value["points"][i][k] = (
-                            f"{float(point[0]) * scale:.3f}",
-                            f"{float(point[1]) * scale:.3f}",
+                            f"{float(point[0]) * scale + offset_x:.3f}",
+                            f"{float(point[1]) * scale + offset_y:.3f}",
                         )
+
+    for layer in parsed_data["layers"]:
+        for rmRectangles in layer["rectangles"]:
+            for geomRectangle in rmRectangles["rectangles"]:
+                geomRectangle.x = geomRectangle.x + offset_x
+                geomRectangle.y = geomRectangle.y + offset_y
+                # geomRectangle.w = geomRectangle.w
+                # geomRectangle.h = geomRectangle.h
 
     return parsed_data
 
@@ -256,8 +380,10 @@ def get_ann_max_bound(parsed_data):
                     if len(points) <= 1:
                         # line needs at least two points, see testcase v2_notebook_complex
                         if not _line_segment_warning_has_been_shown:
-                            logging.warning("- Found a segment with a single point, will ignore it. Please report this "
-                                            "issue at: https://github.com/lucasrla/remarks/issues/64 ")
+                            logging.warning(
+                                "- Found a segment with a single point, will ignore it. Please report this "
+                                "issue at: https://github.com/lucasrla/remarks/issues/64 "
+                            )
                             _line_segment_warning_has_been_shown = True
                         continue
                     line = geom.LineString([(float(p[0]), float(p[1])) for p in points])
@@ -265,6 +391,6 @@ def get_ann_max_bound(parsed_data):
 
     if len(collection) > 0:
         (minx, miny, maxx, maxy) = geom.MultiLineString(collection).bounds
-        return (maxx, maxy)
+        return (maxx, maxy, minx, miny)
     else:
-        return (0, 0)
+        return (0, 0, 0, 0)

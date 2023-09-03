@@ -3,11 +3,11 @@ import logging
 import fitz  # PyMuPDF
 import shapely.geometry as geom  # Shapely
 
+from .parsing import TLayers
 from ..utils import (
     RM_WIDTH,
     RM_HEIGHT,
 )
-
 
 HL_COLOR_CODES = {
     3: "yellow",
@@ -74,7 +74,7 @@ def draw_svg(data, dims={"x": RM_WIDTH, "y": RM_HEIGHT}):
     return output
 
 
-def prepare_segments(data):
+def prepare_segments(data: TLayers):
     segs = {}
 
     for layer in data["layers"]:
@@ -99,6 +99,9 @@ def prepare_segments(data):
                         continue
                     for p in segment:
                         points.append((float(p[0]), float(p[1])))
+                    if len(points) <= 1:
+                        # line needs at least two points, see testcase v2_notebook_complex
+                        continue
 
                     segs[name]["points"].append(points)
                     line = geom.LineString(points)
@@ -106,6 +109,23 @@ def prepare_segments(data):
 
                     if line.length > 0.0:
                         segs[name]["rects"].append(fitz.Rect(*line.bounds))
+        for i, rmRectangle in enumerate(layer["rectangles"]):
+            name = f"Highlighter_{i}"
+            segs[name] = {}
+
+            segs[name]["color-code"] = rmRectangle["color"]
+            segs[name]["points"] = []
+            segs[name]["lines"] = []
+            segs[name]["rects"] = []
+            for geomRectangle in rmRectangle["rectangles"]:
+                segs[name]["rects"].append(
+                    fitz.Rect(
+                        geomRectangle.x,
+                        geomRectangle.y,
+                        geomRectangle.x + geomRectangle.w,
+                        geomRectangle.y + geomRectangle.h,
+                    )
+                )
 
     return segs
 
@@ -113,6 +133,9 @@ def prepare_segments(data):
 def draw_annotations_on_pdf(data, page, inplace=False):
     segments = prepare_segments(data)
 
+    # annot.update() calls have a lot of overhead.
+    # We can batch tools with equal settings to reduce the amount of calls drastically
+    batched_lines_per_tool = {}
     for seg_name, seg_data in segments.items():
         seg_type = seg_name.split("_")[0]
 
@@ -124,8 +147,6 @@ def draw_annotations_on_pdf(data, page, inplace=False):
         # - https://support.remarkable.com/s/article/Software-release-2-11
 
         if seg_type == "Highlighter":
-            # print("seg_data:", seg_data)
-
             # If there are multiple rectangles per segment, do not want to
             # loop over them. Instead, just send them all to addHighlightAnnot.
             # It can handle a list of rectangles and will join them into one
@@ -137,7 +158,6 @@ def draw_annotations_on_pdf(data, page, inplace=False):
                 # https://pymupdf.readthedocs.io/en/latest/recipes-annotations.html#how-to-add-and-modify-annotations
                 annot = page.add_highlight_annot(seg_data["rects"])
 
-                # Now supporting colors
                 try:
                     color_array = fitz.utils.getColor(
                         HL_COLOR_CODES[seg_data["color-code"]]
@@ -151,12 +171,6 @@ def draw_annotations_on_pdf(data, page, inplace=False):
                 annot.set_opacity(seg_data["opacity"])
                 annot.set_border(width=seg_data["stroke-width"])
                 annot.update()
-
-                # print("annot.rect:", annot.rect)
-                # print("annot.border:", annot.border)
-                # print("annot.opacity:", annot.opacity)
-                # print("annot.colors:", annot.colors)
-
             except Exception as e:
                 logging.warning(
                     f"- Just ran into an exception while adding a highlight. It probably happened because of a small highlight that PyMuPDF couldn't handle well enough: {e}"
@@ -164,18 +178,36 @@ def draw_annotations_on_pdf(data, page, inplace=False):
 
         # Scribbles
         else:
-            for seg_points in seg_data["points"]:
-                # https://pymupdf.readthedocs.io/en/latest/recipes-annotations.html#how-to-use-ink-annotations
-                annot = page.add_ink_annot([seg_points])
-                annot.set_border(width=seg_data["stroke-width"])
-                annot.set_opacity(seg_data["opacity"])
-
-                color_array = fitz.utils.getColor(
-                    SC_COLOR_CODES[seg_data["color-code"]]
+            # add all lines with the same tool-configuration to the same batch, using a key for their config
+            if seg_type == "Eraser":
+                # overwrite color to always be white for erasers
+                batch_key = (seg_data["stroke-width"], seg_data["opacity"], 2)
+            else:
+                batch_key = (
+                    seg_data["stroke-width"],
+                    seg_data["opacity"],
+                    seg_data["color-code"],
                 )
-                annot.set_colors(stroke=color_array)
 
-                annot.update()
+            if batch_key in batched_lines_per_tool:
+                batch_points = batched_lines_per_tool[batch_key]
+            else:
+                batch_points = []
+                batched_lines_per_tool[batch_key] = batch_points
+
+            for seg_points in seg_data["points"]:
+                batch_points.append(seg_points)
+
+    # draw the batched lines
+    for (stroke_width, opacity, color_code), points in batched_lines_per_tool.items():
+        annot = page.add_ink_annot(points)
+        annot.set_border(width=stroke_width)
+        annot.set_opacity(opacity)
+
+        color_array = fitz.utils.getColor(SC_COLOR_CODES[color_code])
+        annot.set_colors(stroke=color_array)
+
+        annot.update()
 
     if not inplace:
         return page
@@ -186,12 +218,7 @@ def add_smart_highlight_annotations(hl_data, page, scale, inplace=False):
     hl_list = hl_data["highlights"][0]
 
     for hl in hl_list:
-        # print("hl=", hl)
-        # print("hl[text]:", hl["text"])
-
         quads = page.search_for(hl["text"], quads=True)
-        # print("len(quads)=", len(quads), "len(hl[rects])=", len(hl["rects"]))
-
         # Allowing for some padding around the hl["rects"]
         padding = 2
 
@@ -220,12 +247,10 @@ def add_smart_highlight_annotations(hl_data, page, scale, inplace=False):
             # `bounds` returns minimum bounding region (minx, miny, maxx, maxy)
 
             scaled_envelope = [float(coord) * scale for coord in envelope]
-            # print("scaled_envelope", scaled_envelope)
 
             quads = page.search_for(
                 hl["text"], quads=True, clip=fitz.Rect(scaled_envelope)
             )
-            # print("quads", quads)
 
         # If page.search_for cannot find hl["text"] in the PDF page
         # This fix was inspired by @danieluhricek posts at
@@ -244,8 +269,6 @@ def add_smart_highlight_annotations(hl_data, page, scale, inplace=False):
                 )
                 for rect in hl["rects"]
             ]
-
-            # print("quads", quads)
 
         annot = page.add_highlight_annot(quads)
 
