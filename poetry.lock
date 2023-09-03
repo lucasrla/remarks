@@ -63,17 +63,6 @@ files = [
 ]
 
 [[package]]
-name = "colored"
-version = "1.4.4"
-description = "Simple library for color and formatting to terminal"
-category = "main"
-optional = false
-python-versions = "*"
-files = [
-    {file = "colored-1.4.4.tar.gz", hash = "sha256:04ff4d4dd514274fe3b99a21bb52fb96f2688c01e93fba7bef37221e7cb56ce0"},
-]
-
-[[package]]
 name = "exceptiongroup"
 version = "1.1.3"
 description = "Backport of PEP 654 (exception groups)"
@@ -183,14 +172,14 @@ test = ["appdirs (==1.4.4)", "covdefaults (>=2.3)", "pytest (>=7.4)", "pytest-co
 
 [[package]]
 name = "pluggy"
-version = "1.2.0"
+version = "1.3.0"
 description = "plugin and hook calling mechanisms for python"
 category = "main"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "pluggy-1.2.0-py3-none-any.whl", hash = "sha256:c2fd55a7d7a3863cba1a013e4e2414658b1d07b6bc57b3919e0c63c9abb99849"},
-    {file = "pluggy-1.2.0.tar.gz", hash = "sha256:d12f0c4b579b15f5e054301bb226ee85eeeba08ffec228092f8defbaa3a4c4b3"},
+    {file = "pluggy-1.3.0-py3-none-any.whl", hash = "sha256:d89c696a773f8bd377d18e5ecda92b7a3793cbe66c87060a6fb58c7b6e1061f7"},
+    {file = "pluggy-1.3.0.tar.gz", hash = "sha256:cf61ae8f126ac6f7c451172cf30e3e43d3ca77615509771b3a984a0730651e12"},
 ]
 
 [package.extras]
@@ -263,14 +252,14 @@ files = [
 
 [[package]]
 name = "pytest"
-version = "7.4.0"
+version = "7.4.1"
 description = "pytest: simple powerful testing with Python"
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "pytest-7.4.0-py3-none-any.whl", hash = "sha256:78bf16451a2eb8c7a2ea98e32dc119fd2aa758f1d5d66dbf0a59d69a3969df32"},
-    {file = "pytest-7.4.0.tar.gz", hash = "sha256:b4bf8c45bd59934ed84001ad51e11b4ee40d40a1229d2c79f9c592b0a3f6bd8a"},
+    {file = "pytest-7.4.1-py3-none-any.whl", hash = "sha256:460c9a59b14e27c602eb5ece2e47bec99dc5fc5f6513cf924a7d03a578991b1f"},
+    {file = "pytest-7.4.1.tar.gz", hash = "sha256:2f2301e797521b23e4d2585a0a3d7b5e50fdddaaf7e7d6773ea26ddb17c213ab"},
 ]
 
 [package.dependencies]
@@ -351,7 +340,7 @@ packaging = "^23.0"
 type = "git"
 url = "https://github.com/azeirah/rmscene.git"
 reference = "prod"
-resolved_reference = "843c2981cb21a61cdaefae0a42c32c14b3b178a7"
+resolved_reference = "24336780bb771119012829e9bcac86c3335bb3fa"
 
 [[package]]
 name = "shapely"
@@ -412,18 +401,17 @@ vectorized = ["numpy"]
 
 [[package]]
 name = "syrupy"
-version = "4.2.1"
+version = "4.5.0"
 description = "Pytest Snapshot Test Utility"
 category = "main"
 optional = false
 python-versions = ">=3.8.1,<4"
 files = [
-    {file = "syrupy-4.2.1-py3-none-any.whl", hash = "sha256:4054878270184979a20e78b17a19f5f19eb62c6cbdc3adac6f432a528ddeb099"},
-    {file = "syrupy-4.2.1.tar.gz", hash = "sha256:8c2f4e0c4416780f21f3cd696c64b046d79ddff43522d6a9a4ad7a4f48e9a594"},
+    {file = "syrupy-4.5.0-py3-none-any.whl", hash = "sha256:ea6a237ef374bacebbdb4049f73bf48e3dda76eabd4621a6d104d43077529de6"},
+    {file = "syrupy-4.5.0.tar.gz", hash = "sha256:6e01fccb4cd5ad37ce54e8c265cde068fa9c37b7a0946c603c328e8a38a7330d"},
 ]
 
 [package.dependencies]
-colored = ">=1.3.92,<2.0.0"
 pytest = ">=7.0.0,<8.0.0"
 
 [[package]]

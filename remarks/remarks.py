@@ -143,7 +143,7 @@ def process_document(
         rm_highlights_file,
         has_smart_highlights,
     ) in document.pages():
-        print(f"processing page {page_idx}")
+        print(f"processing page {page_idx}, {page_uuid}")
 
         has_ann_hl = False
 
