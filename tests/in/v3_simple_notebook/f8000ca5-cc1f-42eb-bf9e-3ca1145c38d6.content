@@ -1,0 +1,73 @@
+{
+    "cPages": {
+        "lastOpened": {
+            "timestamp": "0:0",
+            "value": ""
+        },
+        "original": {
+            "timestamp": "0:0",
+            "value": -1
+        },
+        "pages": [
+            {
+                "id": "2e86bec3-bbd1-412e-84c2-e84d90efffaf",
+                "idx": {
+                    "timestamp": "1:1",
+                    "value": "ba"
+                },
+                "scrollTime": {
+                    "timestamp": "1:1",
+                    "value": "2022-12-21T14:29:25Z"
+                },
+                "template": {
+                    "timestamp": "1:1",
+                    "value": "P Dots S"
+                },
+                "verticalScroll": {
+                    "timestamp": "1:1",
+                    "value": 1872
+                }
+            }
+        ],
+        "uuids": [
+            {
+                "first": "a533ab32-689b-5e15-976d-4671496a1fc0",
+                "second": 1
+            }
+        ]
+    },
+    "coverPageNumber": -1,
+    "customZoomCenterX": 0,
+    "customZoomCenterY": 936,
+    "customZoomOrientation": "portrait",
+    "customZoomPageHeight": 1872,
+    "customZoomPageWidth": 1404,
+    "customZoomScale": 1,
+    "documentMetadata": {
+    },
+    "dummyDocument": false,
+    "extraMetadata": {
+        "LastBallpointv2Color": "Black",
+        "LastBallpointv2Size": "2",
+        "LastEraserColor": "Black",
+        "LastEraserSize": "2",
+        "LastEraserTool": "Eraser",
+        "LastPen": "Ballpointv2",
+        "LastTool": "Ballpointv2"
+    },
+    "fileType": "notebook",
+    "fontName": "",
+    "formatVersion": 2,
+    "lineHeight": -1,
+    "margins": 125,
+    "orientation": "portrait",
+    "pageCount": 1,
+    "pageTags": [
+    ],
+    "sizeInBytes": "10276",
+    "tags": [
+    ],
+    "textAlignment": "justify",
+    "textScale": 1,
+    "zoomMode": "bestFit"
+}

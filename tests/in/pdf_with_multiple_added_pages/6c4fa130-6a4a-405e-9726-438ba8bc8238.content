@@ -1,0 +1,156 @@
+{
+    "cPages": {
+        "lastOpened": {
+            "timestamp": "1:5",
+            "value": "7f2387c3-9556-43b6-be38-3047c9c5070c"
+        },
+        "original": {
+            "timestamp": "1:2",
+            "value": 3
+        },
+        "pages": [
+            {
+                "id": "7f2387c3-9556-43b6-be38-3047c9c5070c",
+                "idx": {
+                    "timestamp": "1:1",
+                    "value": "ba"
+                },
+                "redir": {
+                    "timestamp": "1:1",
+                    "value": 0
+                },
+                "template": {
+                    "timestamp": "1:1",
+                    "value": "Blank"
+                }
+            },
+            {
+                "id": "724f5adb-ad4a-411a-84e8-b16b8df1c33f",
+                "idx": {
+                    "timestamp": "1:1",
+                    "value": "bab"
+                },
+                "template": {
+                    "timestamp": "1:1",
+                    "value": "Blank"
+                }
+            },
+            {
+                "id": "22b7acbe-87ac-4b9e-9a90-782ab8d2eec5",
+                "idx": {
+                    "timestamp": "1:1",
+                    "value": "bb"
+                },
+                "redir": {
+                    "timestamp": "1:1",
+                    "value": 1
+                }
+            },
+            {
+                "id": "e0278669-de83-4474-a382-a7da5a05f484",
+                "idx": {
+                    "timestamp": "1:1",
+                    "value": "bbb"
+                }
+            },
+            {
+                "id": "69bee56e-53c4-494d-ad4c-096b9ed89db6",
+                "idx": {
+                    "timestamp": "1:1",
+                    "value": "bbc"
+                }
+            },
+            {
+                "id": "27ad7c27-e291-455e-8aee-dd2d1c76f6d1",
+                "idx": {
+                    "timestamp": "1:1",
+                    "value": "bc"
+                },
+                "redir": {
+                    "timestamp": "1:1",
+                    "value": 2
+                }
+            }
+        ],
+        "uuids": [
+            {
+                "first": "a533ab32-689b-5e15-976d-4671496a1fc0",
+                "second": 1
+            }
+        ]
+    },
+    "coverPageNumber": -1,
+    "customZoomCenterX": 0,
+    "customZoomCenterY": 936,
+    "customZoomOrientation": "portrait",
+    "customZoomPageHeight": 1872,
+    "customZoomPageWidth": 1404,
+    "customZoomScale": 1,
+    "documentMetadata": {
+    },
+    "dummyDocument": false,
+    "extraMetadata": {
+        "LastBallpointColor": "Black",
+        "LastBallpointSize": "2",
+        "LastBallpointv2Color": "Black",
+        "LastBallpointv2Size": "2",
+        "LastCalligraphyColor": "Black",
+        "LastCalligraphySize": "2",
+        "LastClearPageColor": "Black",
+        "LastClearPageSize": "2",
+        "LastEraseSectionColor": "Black",
+        "LastEraseSectionSize": "2",
+        "LastEraserColor": "Black",
+        "LastEraserSize": "2",
+        "LastEraserTool": "Eraser",
+        "LastFinelinerColor": "Black",
+        "LastFinelinerSize": "2",
+        "LastFinelinerv2Color": "Black",
+        "LastFinelinerv2Size": "2",
+        "LastHighlighterColor": "Black",
+        "LastHighlighterSize": "2",
+        "LastHighlighterv2Color": "HighlighterPink",
+        "LastHighlighterv2Size": "2",
+        "LastMarkerColor": "Black",
+        "LastMarkerSize": "2",
+        "LastMarkerv2Color": "Black",
+        "LastMarkerv2Size": "2",
+        "LastPaintbrushColor": "Black",
+        "LastPaintbrushSize": "2",
+        "LastPaintbrushv2Color": "Black",
+        "LastPaintbrushv2Size": "2",
+        "LastPen": "Ballpointv2",
+        "LastPencilColor": "Black",
+        "LastPencilSize": "2",
+        "LastPencilv2Color": "Black",
+        "LastPencilv2Size": "2",
+        "LastReservedPenColor": "Black",
+        "LastReservedPenSize": "2",
+        "LastSelectionToolColor": "Black",
+        "LastSelectionToolSize": "2",
+        "LastSharpPencilColor": "Black",
+        "LastSharpPencilSize": "2",
+        "LastSharpPencilv2Color": "Black",
+        "LastSharpPencilv2Size": "2",
+        "LastSolidPenColor": "Black",
+        "LastSolidPenSize": "2",
+        "LastTool": "Ballpointv2",
+        "LastZoomToolColor": "Black",
+        "LastZoomToolSize": "2"
+    },
+    "fileType": "pdf",
+    "fontName": "",
+    "formatVersion": 2,
+    "lineHeight": -1,
+    "margins": 125,
+    "orientation": "portrait",
+    "pageCount": 6,
+    "pageTags": [
+    ],
+    "sizeInBytes": "178433",
+    "tags": [
+    ],
+    "textAlignment": "left",
+    "textScale": 1,
+    "zoomMode": "bestFit"
+}
